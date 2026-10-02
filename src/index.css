@@ -197,6 +197,11 @@ body { background: var(--surface-0); color: var(--text); }
 }
 
 @media (max-width: 800px) {
+	.viewer { overflow-x: hidden !important; }
+	.page-stack { width: 100%; align-items: stretch; overflow-x: hidden; }
+	.pdf-page { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+	.pdf-page > div { width: 100% !important; max-width: 100% !important; }
+	.pdf-page canvas { display: block; width: 100% !important; min-width: 0 !important; max-width: 100% !important; height: auto !important; }
 	.toolbar { height: 68px; min-height: 68px; padding: 0 12px; gap: 9px; }
 	.brand-copy span, .toolbar-document, .toolbar-divider { display: none; }
 	.brand-copy strong { font-size: 12px; }
