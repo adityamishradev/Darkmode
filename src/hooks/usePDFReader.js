@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+const MAX_PDF_SIZE = 500 * 1024 * 1024
 
 export function usePDFReader() {
   const [file, setFile] = useState(null)
@@ -23,6 +24,7 @@ export function usePDFReader() {
   const openFile = useCallback((nextFile) => {
     const isPdf = nextFile && (nextFile.type === 'application/pdf' || nextFile.name?.toLowerCase().endsWith('.pdf'))
     if (!isPdf) { setError('Please choose a valid PDF file.'); return }
+    if (nextFile.size > MAX_PDF_SIZE) { setError('PDF files must be 500 MB or smaller.'); return }
     if (fileUrl) URL.revokeObjectURL(fileUrl)
     setError(''); setIsLoading(true); setFile(nextFile); setFileUrl(URL.createObjectURL(nextFile)); setPageNumber(1); setRotation(0)
   }, [fileUrl])

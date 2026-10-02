@@ -13,7 +13,7 @@ export default function UploadArea({ onOpen, error, isLoading }) {
       <p className="upload-copy">Drag & drop a document here, or choose one from your device.</p>
       <button className="primary-button" onClick={() => inputRef.current?.click()} disabled={isLoading}><FolderOpen size={17} /> {isLoading ? 'Opening…' : 'Browse files'}</button>
       <input ref={inputRef} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => accept(event.target.files)} />
-      <p className="upload-note">Your files never leave this browser</p>
+      <p className="upload-note">PDF up to 500 MB · Your files never leave this browser</p>
       {error && <p className="error-text">{error}</p>}
     </div>
   </main>
