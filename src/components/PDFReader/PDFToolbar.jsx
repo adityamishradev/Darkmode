@@ -3,7 +3,7 @@ import ThemeToggle from '../ThemeToggle'
 
 function ToolButton({ label, children, onClick, disabled = false }) { return <button className="icon-button" aria-label={label} title={label} onClick={onClick} disabled={disabled}>{children}</button> }
 
-export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, onSearch, onZoom, onRotate, onFullscreen, theme, onThemeToggle, onDownload, onPrint, sidebarOpen, onSidebar }) {
+export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, onSearch, onZoom, onRotate, onFullscreen, theme, onThemeToggle, onDownload, onPrint, onMore, sidebarOpen, onSidebar }) {
   return <header className="toolbar">
     <div className="brand"><div className="brand-mark">P</div><span>PDF Reader</span></div>
     <div className="toolbar-divider" />
@@ -20,7 +20,7 @@ export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, 
       <ThemeToggle theme={theme} onToggle={onThemeToggle} />
       <ToolButton label="Print document" onClick={onPrint} disabled={!file}><Printer size={17} /></ToolButton>
       <ToolButton label="Download document" onClick={onDownload} disabled={!file}><Download size={17} /></ToolButton>
-      <ToolButton label="More options" onClick={() => window.alert('Use the keyboard shortcuts for fast navigation.')}><MoreHorizontal size={18} /></ToolButton>
+      <ToolButton label="More options" onClick={onMore}><MoreHorizontal size={18} /></ToolButton>
     </div>
   </header>
 }

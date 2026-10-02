@@ -83,3 +83,22 @@ button:disabled { opacity: .35; cursor: not-allowed; }
 	.search-popover { left: 10px; right: 10px; top: 64px; }
 	.search-popover input { flex: 1; width: auto; min-width: 0; }
 }
+
+/* Keep the full toolbar usable on narrow screens through horizontal scrolling. */
+@media (max-width: 800px) {
+	.toolbar { overflow: hidden; }
+	.toolbar-actions { flex: 1 1 auto; justify-content: flex-start; padding-bottom: 2px; }
+	.toolbar-actions .toolbar-button { flex: 0 0 auto; width: auto; min-width: 34px; padding: 0 8px; }
+	.toolbar-actions .toolbar-button span { display: inline; }
+	.toolbar-actions .page-readout, .toolbar-actions .zoom-readout,
+	.toolbar-actions > :nth-child(11), .toolbar-actions > :nth-child(12),
+	.toolbar-actions > :nth-child(13) { display: inline-flex; }
+	.toolbar-actions > :nth-child(4) { display: inline-block; }
+}
+
+@media (max-width: 520px) {
+	.toolbar-actions .toolbar-button span { display: none; }
+	.toolbar-actions .toolbar-button { width: 34px; padding: 0; justify-content: center; }
+	.toolbar-actions .page-readout { display: inline-flex; min-width: 58px; padding-left: 8px; }
+	.toolbar-actions .zoom-readout { display: inline-block; }
+}
