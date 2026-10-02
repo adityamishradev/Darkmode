@@ -102,3 +102,29 @@ button:disabled { opacity: .35; cursor: not-allowed; }
 	.toolbar-actions .page-readout { display: inline-flex; min-width: 58px; padding-left: 8px; }
 	.toolbar-actions .zoom-readout { display: inline-block; }
 }
+
+@media (max-width: 800px) {
+	.viewer { width: 0; }
+	.page-stack { width: 100%; align-items: center; overflow-x: hidden; }
+	.pdf-page { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; }
+	.pdf-page canvas { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; }
+	.bottom-controls { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; width: 100%; }
+	.reading-tools { position: static; transform: none; min-width: 0; overflow-x: auto; justify-content: center; scrollbar-width: none; }
+	.reading-tools::-webkit-scrollbar { display: none; }
+	.reading-tools .mode-button.active { flex: 0 0 auto; }
+	.reading-tools .icon-button { flex: 0 0 30px; }
+	.zoom-tools { display: flex; justify-content: flex-end; }
+	.zoom-tools > svg { display: none; }
+}
+
+@media (max-width: 520px) {
+	.toolbar { box-shadow: 0 1px 0 rgba(255,255,255,.03); }
+	.bottom-controls { min-height: 64px; padding: 7px 6px; gap: 2px; }
+	.bottom-page { padding: 0 2px; }
+	.bottom-page input { width: 22px; }
+	.reading-tools { justify-content: flex-start; padding: 0 3px; }
+	.reading-tools .mode-button { display: none; }
+	.reading-tools .mode-button.active { display: inline-flex; align-items: center; }
+	.reading-tools .icon-button { width: 29px; height: 29px; }
+	.zoom-tools .icon-button { width: 30px; height: 30px; }
+}
