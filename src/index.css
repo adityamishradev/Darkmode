@@ -173,6 +173,13 @@ body { background: var(--surface-0); color: var(--text); }
 .upload-features { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; margin-top: 15px; }
 .upload-features span { border: 1px solid var(--line); border-radius: 999px; padding: 5px 8px; color: #8193a6; font-size: 9px; }
 .error-text { max-width: 320px; line-height: 1.5; }
+.app-footer { min-height: 58px; display: flex; align-items: center; gap: 14px; padding: 0 26px; border-top: 1px solid var(--line); background: var(--surface-1); color: var(--muted); font-size: 10px; }
+.footer-brand { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.footer-mark { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px 6px 6px 2px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; }
+.footer-copy { color: #8192a4; }
+.footer-meta { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+.footer-meta span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.footer-dot { width: 5px; height: 5px; border-radius: 50%; background: #63c892; box-shadow: 0 0 0 3px rgba(99,200,146,.1); }
 .shortcuts-modal { background: var(--surface-1); border-color: var(--line-strong); border-radius: 14px; }
 .shortcut-row { border-top-color: var(--line); }
 
@@ -217,6 +224,9 @@ body { background: var(--surface-0); color: var(--text); }
 	.reading-tools .icon-button { min-width: 34px; width: 34px; height: 38px; }
 	.upload-main { padding: 14px; }
 	.upload-card { min-height: 380px; padding: 26px 18px; }
+	.app-footer { min-height: 52px; padding: 8px 14px; gap: 8px; flex-wrap: wrap; }
+	.footer-copy { display: none; }
+	.footer-meta { width: 100%; justify-content: space-between; gap: 6px; font-size: 9px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
