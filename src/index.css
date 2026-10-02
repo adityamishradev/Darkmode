@@ -192,6 +192,12 @@ body { background: var(--surface-0); color: var(--text); }
 .footer-dot { width: 5px; height: 5px; border-radius: 50%; background: #63c892; box-shadow: 0 0 0 3px rgba(99,200,146,.1); }
 .shortcuts-modal { background: var(--surface-1); border-color: var(--line-strong); border-radius: 14px; }
 .shortcut-row { border-top-color: var(--line); }
+.pptx-viewer { position: relative; padding: 32px; overflow: auto; background: #0e151e; }
+.pptx-stage { width: min(1200px, 100%); min-height: 100%; margin: 0 auto; display: flex; align-items: flex-start; justify-content: center; }
+.pptx-container { width: min(100%, 1100px); max-width: 1100px; aspect-ratio: 16 / 9; margin: 0 auto; }
+.pptx-container > div { width: 100% !important; max-width: 100%; margin: 0 auto 28px; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+.pptx-container canvas, .pptx-container svg, .pptx-container img { max-width: 100%; height: auto; }
+.pptx-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--muted); font-size: 12px; }
 
 @media (max-width: 1100px) {
 	.toolbar-document { max-width: 150px; }
@@ -201,6 +207,8 @@ body { background: var(--surface-0); color: var(--text); }
 
 @media (max-width: 800px) {
 	.viewer { overflow-x: hidden !important; }
+	.pptx-viewer { padding: 12px; }
+	.pptx-container { width: 100%; }
 	.page-stack { width: 100%; align-items: stretch; overflow-x: hidden; }
 	.pdf-page { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
 	.pdf-page > div { width: 100% !important; max-width: 100% !important; }

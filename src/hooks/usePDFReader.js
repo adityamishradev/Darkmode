@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
-const MAX_PDF_SIZE = 500 * 1024 * 1024
+const MAX_FILE_SIZE = 500 * 1024 * 1024
 
 export function usePDFReader() {
   const [file, setFile] = useState(null)
+  const [fileType, setFileType] = useState('pdf')
   const [fileUrl, setFileUrl] = useState(null)
   const [numPages, setNumPages] = useState(0)
   const [pageNumber, setPageNumber] = useState(() => Number(localStorage.getItem('pdf-last-page')) || 1)
@@ -23,10 +24,11 @@ export function usePDFReader() {
 
   const openFile = useCallback((nextFile) => {
     const isPdf = nextFile && (nextFile.type === 'application/pdf' || nextFile.name?.toLowerCase().endsWith('.pdf'))
-    if (!isPdf) { setError('Please choose a valid PDF file.'); return }
-    if (nextFile.size > MAX_PDF_SIZE) { setError('PDF files must be 500 MB or smaller.'); return }
+    const isPptx = nextFile && (nextFile.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || nextFile.name?.toLowerCase().endsWith('.pptx'))
+    if (!isPdf && !isPptx) { setError('Please choose a PDF or PowerPoint (.pptx) file.'); return }
+    if (nextFile.size > MAX_FILE_SIZE) { setError('Files must be 500 MB or smaller.'); return }
     if (fileUrl) URL.revokeObjectURL(fileUrl)
-    setError(''); setIsLoading(true); setFile(nextFile); setFileUrl(URL.createObjectURL(nextFile)); setPageNumber(1); setRotation(0)
+    setError(''); setIsLoading(true); setFile(nextFile); setFileType(isPptx ? 'pptx' : 'pdf'); setFileUrl(URL.createObjectURL(nextFile)); setPageNumber(1); setRotation(0)
   }, [fileUrl])
   const onDocumentLoad = useCallback(({ numPages: total }) => {
     const savedPage = Number(localStorage.getItem('pdf-last-page')) || 1
@@ -59,5 +61,5 @@ export function usePDFReader() {
   }, [])
   const fitPage = useCallback(() => setScale(1), [])
 
-  return { file, fileUrl, numPages, pageNumber, scale, rotation, readingMode, error, isLoading, bookmarks, viewerRef, pageRefs, openFile, onDocumentLoad, setPageNumber: goToPage, changeZoom, setRotation, setReadingMode, toggleBookmark, onViewerScroll, fitWidth, fitPage, setError }
+  return { file, fileType, fileUrl, numPages, pageNumber, scale, rotation, readingMode, error, isLoading, bookmarks, viewerRef, pageRefs, openFile, onDocumentLoad, setPageNumber: goToPage, changeZoom, setRotation, setReadingMode, toggleBookmark, onViewerScroll, fitWidth, fitPage, setError }
 }
