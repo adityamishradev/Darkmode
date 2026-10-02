@@ -26,7 +26,12 @@ export function usePDFReader() {
     if (fileUrl) URL.revokeObjectURL(fileUrl)
     setError(''); setIsLoading(true); setFile(nextFile); setFileUrl(URL.createObjectURL(nextFile)); setPageNumber(1); setRotation(0)
   }, [fileUrl])
-  const onDocumentLoad = useCallback(({ numPages: total }) => { setNumPages(total); setPageNumber(1); setIsLoading(false) }, [])
+  const onDocumentLoad = useCallback(({ numPages: total }) => {
+    const savedPage = Number(localStorage.getItem('pdf-last-page')) || 1
+    setNumPages(total)
+    setPageNumber(clamp(savedPage, 1, total))
+    setIsLoading(false)
+  }, [])
   const goToPage = useCallback((nextPage) => {
     const target = clamp(Number(nextPage) || 1, 1, numPages || 1)
     setPageNumber(target)
