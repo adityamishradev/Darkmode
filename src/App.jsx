@@ -22,6 +22,10 @@ function App() {
   const [fullscreen, setFullscreen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const fileInputRef = useRef(null)
+  const openFileRef = useRef(reader.openFile)
+  const setErrorRef = useRef(reader.setError)
+  openFileRef.current = reader.openFile
+  setErrorRef.current = reader.setError
   const openPicker = () => fileInputRef.current?.click()
   const previous = useCallback(() => reader.setPageNumber(reader.pageNumber - 1), [reader])
   const next = useCallback(() => reader.setPageNumber(reader.pageNumber + 1), [reader])
@@ -35,6 +39,22 @@ function App() {
       span.style.backgroundColor = searchQuery && span.textContent?.toLowerCase().includes(searchQuery.toLowerCase()) ? 'rgba(255, 203, 72, .55)' : ''
     })
   }, [searchQuery, reader.numPages])
+  useEffect(() => {
+    if (!('launchQueue' in window)) return undefined
+
+    window.launchQueue.setConsumer(async (launchParams) => {
+      const fileHandle = launchParams.files?.find((handle) => handle.name?.toLowerCase().endsWith('.pdf'))
+      if (!fileHandle) return
+      try {
+        const file = await fileHandle.getFile()
+        openFileRef.current(file)
+      } catch (error) {
+        setErrorRef.current(error?.message || 'The selected PDF could not be opened.')
+      }
+    })
+
+    return () => window.launchQueue.setConsumer(() => {})
+  }, [])
   const download = () => { const link = document.createElement('a'); link.href = reader.fileUrl; link.download = reader.file?.name || 'document.pdf'; link.click() }
   const print = () => { const frame = document.createElement('iframe'); frame.style.display = 'none'; frame.src = reader.fileUrl; document.body.appendChild(frame); frame.onload = () => frame.contentWindow.print() }
   if (!reader.fileUrl) return <div className="app-shell"><header className="toolbar"><div className="brand"><div className="brand-mark">P</div><span>PDF Reader</span></div><PWAStatus canInstall={canInstall} onInstall={install} isOnline={isOnline} /><button className="shortcut-hint" onClick={() => setShowShortcuts(true)}><Keyboard size={15} /> Shortcuts</button></header><UploadArea onOpen={reader.openFile} error={reader.error} isLoading={reader.isLoading} />{showShortcuts && <Shortcuts onClose={() => setShowShortcuts(false)} />}</div>

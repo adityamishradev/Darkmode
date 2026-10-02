@@ -22,6 +22,12 @@ export default defineConfig({
       theme_color: '#101012',
       background_color: '#101012',
       lang: 'en',
+      file_handlers: [
+        {
+          action: '/',
+          accept: { 'application/pdf': ['.pdf'] },
+        },
+      ],
       icons: [
         { src: '/icons/pdf-reader-192.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
         { src: '/icons/pdf-reader-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
