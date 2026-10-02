@@ -1,6 +1,7 @@
 import { Download, FilePlus2, Maximize2, Minus, MoreHorizontal, Plus, RotateCw, Search, Printer, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ThemeToggle from '../ThemeToggle'
 import PWAStatus from '../PWAStatus'
+import RefreshButton from '../RefreshButton'
 
 function ToolButton({ label, children, onClick, disabled = false, className = '' }) { return <button className={`icon-button ${className}`} aria-label={label} title={label} onClick={onClick} disabled={disabled}>{children}</button> }
 
@@ -24,6 +25,7 @@ export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, 
       <ToolButton label="Print document" onClick={onPrint} disabled={!file}><Printer size={17} /></ToolButton>
       <ToolButton label="Download document" onClick={onDownload} disabled={!file}><Download size={17} /></ToolButton>
       <ToolButton label="More options" onClick={onMore}><MoreHorizontal size={18} /></ToolButton>
+      <RefreshButton />
     </div>
   </header>
 }

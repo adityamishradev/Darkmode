@@ -19,6 +19,9 @@ button:disabled { opacity: .35; cursor: not-allowed; }
 .toolbar-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
 .toolbar-button, .shortcut-hint { background: #1d1d21; border: 1px solid #303035; height: 34px; padding: 0 11px; border-radius: 7px; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: #dedee1; transition: .18s ease; }
 .toolbar-button:hover, .shortcut-hint:hover, .icon-button:hover { background: #29292f; border-color: #46464f; }
+.refresh-button { height: 38px; padding: 0 11px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid rgba(239, 68, 68, .5); border-radius: var(--radius); background: rgba(185, 28, 28, .2); color: #fca5a5; font-size: 11px; transition: .18s ease; }
+.refresh-button:hover { background: #dc2626; border-color: #ef4444; color: #fff; }
+.refresh-button:focus-visible { outline: 2px solid #f87171; outline-offset: 2px; }
 .icon-button { width: 34px; height: 34px; border-radius: 7px; border: 1px solid transparent; background: transparent; display: inline-grid; place-items: center; color: #a6a6ad; transition: .18s ease; }
 .icon-button.small { width: 26px; height: 26px; }
 .zoom-readout { background: transparent; color: #e1e1e5; font-family: 'DM Mono', monospace; font-size: 11px; min-width: 42px; }
