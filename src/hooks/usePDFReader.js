@@ -34,6 +34,8 @@ export function usePDFReader() {
     const savedPage = Number(localStorage.getItem('pdf-last-page')) || 1
     setNumPages(total)
     setPageNumber(clamp(savedPage, 1, total))
+    const viewerWidth = viewerRef.current?.clientWidth || 900
+    setScale(clamp((viewerWidth - 80) / 816, 0.5, 3))
     setIsLoading(false)
   }, [])
   const goToPage = useCallback((nextPage) => {

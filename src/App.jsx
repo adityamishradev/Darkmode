@@ -45,7 +45,7 @@ function App() {
     if (!('launchQueue' in window)) return undefined
 
     window.launchQueue.setConsumer(async (launchParams) => {
-      const fileHandle = launchParams.files?.find((handle) => handle.name?.toLowerCase().endsWith('.pdf'))
+      const fileHandle = launchParams.files?.find((handle) => /\.(pdf|pptx)$/i.test(handle.name || ''))
       if (!fileHandle) return
       try {
         const file = await fileHandle.getFile()
