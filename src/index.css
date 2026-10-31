@@ -109,6 +109,7 @@ body { background: var(--surface-0); color: var(--text); }
 .toolbar { height: 76px; min-height: 76px; gap: 14px; padding: 0 22px; background: rgba(11, 16, 23, .96); border-color: var(--line); box-shadow: 0 1px 0 rgba(255,255,255,.02); }
 .brand { gap: 11px; min-width: max-content; }
 .brand-mark { width: 34px; height: 34px; border-radius: 9px 9px 9px 3px; background: var(--accent); box-shadow: 0 7px 16px rgba(45,127,228,.24); }
+.brand-mark { background: url('/icons/image.png') center / cover no-repeat; color: transparent; font-size: 0; }
 .brand-copy { display: flex; flex-direction: column; gap: 2px; }
 .brand-copy strong { font-size: 13px; letter-spacing: -.02em; }
 .brand-copy span { color: var(--muted); font-size: 9px; font-weight: 500; }
@@ -188,6 +189,7 @@ body { background: var(--surface-0); color: var(--text); }
 .app-footer { min-height: 58px; display: flex; align-items: center; gap: 14px; padding: 0 26px; border-top: 1px solid var(--line); background: var(--surface-1); color: var(--muted); font-size: 10px; }
 .footer-brand { display: flex; align-items: center; gap: 8px; color: var(--text); }
 .footer-mark { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px 6px 6px 2px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; }
+.footer-mark { background: url('/icons/image.png') center / cover no-repeat; color: transparent; font-size: 0; }
 .footer-copy { color: #8192a4; }
 .footer-meta { display: flex; align-items: center; gap: 16px; margin-left: auto; }
 .footer-meta span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
