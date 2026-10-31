@@ -6,11 +6,11 @@ export default defineConfig({
   server: { host: true },
   preview: { host: true },
   plugins: [react(), VitePWA({
-    registerType: 'autoUpdate',
+    registerType: 'prompt',
     strategies: 'generateSW',
     filename: 'sw.js',
     injectRegister: 'auto',
-    includeAssets: ['icons/*.svg'],
+    includeAssets: ['icons/*.svg', 'icons/*.png'],
     manifest: {
       name: 'PDF Reader',
       short_name: 'PDF Reader',
@@ -29,9 +29,9 @@ export default defineConfig({
         },
       ],
       icons: [
-        { src: '/icons/pdf-reader-192.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
-        { src: '/icons/pdf-reader-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
-        { src: '/icons/pdf-reader-maskable.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
+        { src: '/icons/image.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/icons/image.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/icons/image.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
     workbox: {

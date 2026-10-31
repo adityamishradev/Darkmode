@@ -10,12 +10,13 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "jspdf": "^4.2.1",
     "lucide-react": "latest",
-    "pdfjs-dist": "latest",
+    "pdfjs-dist": "^5.4.296",
     "pptx-preview": "^1.0.7",
     "react": "latest",
     "react-dom": "latest",
-    "react-pdf": "latest"
+    "react-pdf": "^10.5.0"
   },
   "devDependencies": {
     "autoprefixer": "latest",

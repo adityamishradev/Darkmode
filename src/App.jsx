@@ -11,6 +11,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { usePDFReader } from './hooks/usePDFReader'
 import { useTheme } from './hooks/useTheme'
 import { usePWA } from './hooks/usePWA'
+import { useRecentFiles } from './hooks/useRecentFiles'
 import PWAStatus from './components/PWAStatus'
 import RefreshButton from './components/RefreshButton'
 
@@ -18,17 +19,22 @@ function App() {
   const reader = usePDFReader()
   const { theme, setTheme } = useTheme()
   const { canInstall, install, isOnline } = usePWA()
+  const { recentFiles, addRecentFile } = useRecentFiles()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [fullscreen, setFullscreen] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const fileInputRef = useRef(null)
-  const openFileRef = useRef(reader.openFile)
+  const openFileRef = useRef(null)
   const setErrorRef = useRef(reader.setError)
-  openFileRef.current = reader.openFile
   setErrorRef.current = reader.setError
   const openPicker = () => fileInputRef.current?.click()
+  const handleOpenFile = useCallback((file) => {
+    if (file) addRecentFile(file)
+    reader.openFile(file)
+  }, [reader, addRecentFile])
+  openFileRef.current = handleOpenFile
   const previous = useCallback(() => reader.setPageNumber(reader.pageNumber - 1), [reader])
   const next = useCallback(() => reader.setPageNumber(reader.pageNumber + 1), [reader])
   const first = useCallback(() => reader.setPageNumber(1), [reader])
@@ -45,7 +51,7 @@ function App() {
     if (!('launchQueue' in window)) return undefined
 
     window.launchQueue.setConsumer(async (launchParams) => {
-      const fileHandle = launchParams.files?.find((handle) => handle.name?.toLowerCase().endsWith('.pdf'))
+      const fileHandle = launchParams.files?.find((handle) => /\.(pdf|pptx)$/i.test(handle.name || ''))
       if (!fileHandle) return
       try {
         const file = await fileHandle.getFile()
@@ -60,8 +66,8 @@ function App() {
   const download = () => { const link = document.createElement('a'); link.href = reader.fileUrl; link.download = reader.file?.name || 'document.pdf'; link.click() }
   const print = () => { const frame = document.createElement('iframe'); frame.style.display = 'none'; frame.src = reader.fileUrl; document.body.appendChild(frame); frame.onload = () => frame.contentWindow.print() }
   const isPptx = reader.fileType === 'pptx'
-  if (!reader.fileUrl) return <div className="app-shell"><header className="toolbar"><div className="brand"><div className="brand-mark">P</div><span>PDF Reader</span></div><PWAStatus canInstall={canInstall} onInstall={install} isOnline={isOnline} /><RefreshButton /><button className="shortcut-hint" onClick={() => setShowShortcuts(true)}><Keyboard size={15} /> Shortcuts</button></header><UploadArea onOpen={reader.openFile} error={reader.error} isLoading={reader.isLoading} /><footer className="app-footer"><div className="footer-brand"><span className="footer-mark">P</span><strong>PDF Reader</strong></div><span className="footer-copy">Private, local-first document reading</span><div className="footer-meta"><span><i className="footer-dot" /> 500 MB max</span><span><i className="footer-dot" /> Works offline</span><span>Built for the web</span></div></footer>{showShortcuts && <Shortcuts onClose={() => setShowShortcuts(false)} />}</div>
-  return <div className={`app-shell ${fullscreen ? 'is-fullscreen' : ''}`}><PDFToolbar file={reader.file} pageNumber={reader.pageNumber} numPages={reader.numPages} scale={reader.scale} onOpen={openPicker} onSearch={() => setSearchOpen(true)} onZoom={reader.changeZoom} onRotate={() => reader.setRotation((reader.rotation + 90) % 360)} onFullscreen={toggleFullscreen} theme={theme} onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')} onDownload={download} onPrint={print} onMore={() => setShowShortcuts(true)} canInstall={canInstall} onInstall={install} isOnline={isOnline} sidebarOpen={!isPptx && sidebarOpen} onSidebar={() => setSidebarOpen((open) => !open)} /><input ref={fileInputRef} hidden type="file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,.pptx" onChange={(event) => reader.openFile(event.target.files?.[0])} />{searchOpen && !isPptx && <PDFSearch onClose={() => { setSearchOpen(false); setSearchQuery('') }} onFind={setSearchQuery} />}<div className="reader-layout">{isPptx ? <PPTXViewer fileUrl={reader.fileUrl} /> : <>{sidebarOpen && <PDFSidebar file={reader.file} fileUrl={reader.fileUrl} numPages={reader.numPages} pageNumber={reader.pageNumber} bookmarks={reader.bookmarks} onSelect={reader.setPageNumber} onBookmark={reader.toggleBookmark} onClose={() => setSidebarOpen(false)} readingMode={reader.readingMode} onReadingMode={reader.setReadingMode} scale={reader.scale} onZoom={reader.changeZoom} onFitWidth={reader.fitWidth} onFitPage={reader.fitPage} theme={theme} onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />}<PDFViewer file={reader.file} numPages={reader.numPages} pageRefs={reader.pageRefs} viewerRef={reader.viewerRef} scale={reader.scale} rotation={reader.rotation} readingMode={reader.readingMode} onLoad={reader.onDocumentLoad} onError={(error) => reader.setError(error?.message || 'This PDF could not be opened.')} onScroll={reader.onViewerScroll} /></>}</div>{!isPptx && !sidebarOpen && <button className="sidebar-reopen" onClick={() => setSidebarOpen(true)} aria-label="Open sidebar" title="Open sidebar"><PanelLeftOpen size={18} /></button>}{!isPptx && <PDFControls pageNumber={reader.pageNumber} numPages={reader.numPages} onPrevious={previous} onNext={next} onPageChange={reader.setPageNumber} onZoom={reader.changeZoom} onBookmark={() => reader.toggleBookmark()} bookmarked={reader.bookmarks.includes(reader.pageNumber)} readingMode={reader.readingMode} onReadingMode={reader.setReadingMode} onFitWidth={reader.fitWidth} onFitPage={reader.fitPage} fullscreen={fullscreen} />}{showShortcuts && <Shortcuts onClose={() => setShowShortcuts(false)} />}</div>
+  if (!reader.fileUrl) return <div className="app-shell"><header className="toolbar"><div className="brand"><div className="brand-mark">P</div><span>PDF Reader</span></div><PWAStatus canInstall={canInstall} onInstall={install} isOnline={isOnline} /><RefreshButton /><button className="shortcut-hint" onClick={() => setShowShortcuts(true)}><Keyboard size={15} /> Shortcuts</button></header><UploadArea onOpen={handleOpenFile} error={reader.error} isLoading={reader.isLoading} recentFiles={recentFiles} /><footer className="app-footer"><div className="footer-brand"><span className="footer-mark">P</span><strong>PDF Reader</strong></div><span className="footer-copy">Private, local-first document reading</span><div className="footer-meta"><span><i className="footer-dot" /> 500 MB max</span><span><i className="footer-dot" /> Works offline</span><span>Built for the web</span></div></footer>{showShortcuts && <Shortcuts onClose={() => setShowShortcuts(false)} />}</div>
+  return <div className={`app-shell ${fullscreen ? 'is-fullscreen' : ''}`}><PDFToolbar file={reader.file} pageNumber={reader.pageNumber} numPages={reader.numPages} scale={reader.scale} onOpen={openPicker} onSearch={() => setSearchOpen(true)} onZoom={reader.changeZoom} onRotate={() => reader.setRotation((reader.rotation + 90) % 360)} onFullscreen={toggleFullscreen} theme={theme} onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')} onDownload={download} onPrint={print} onMore={() => setShowShortcuts(true)} canInstall={canInstall} onInstall={install} isOnline={isOnline} sidebarOpen={!isPptx && sidebarOpen} onSidebar={() => setSidebarOpen((open) => !open)} /><input ref={fileInputRef} hidden type="file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,.pptx" onChange={(event) => handleOpenFile(event.target.files?.[0])} />{searchOpen && !isPptx && <PDFSearch onClose={() => { setSearchOpen(false); setSearchQuery('') }} onFind={setSearchQuery} />}<div className="reader-layout">{isPptx ? <PPTXViewer fileUrl={reader.fileUrl} /> : <>{sidebarOpen && <PDFSidebar file={reader.file} fileUrl={reader.fileUrl} numPages={reader.numPages} pageNumber={reader.pageNumber} bookmarks={reader.bookmarks} onSelect={reader.setPageNumber} onBookmark={reader.toggleBookmark} onClose={() => setSidebarOpen(false)} readingMode={reader.readingMode} onReadingMode={reader.setReadingMode} scale={reader.scale} onZoom={reader.changeZoom} onFitWidth={reader.fitWidth} onFitPage={reader.fitPage} theme={theme} onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />}<PDFViewer file={reader.file} numPages={reader.numPages} pageRefs={reader.pageRefs} viewerRef={reader.viewerRef} scale={reader.scale} rotation={reader.rotation} readingMode={reader.readingMode} onLoad={reader.onDocumentLoad} onError={(error) => reader.setError(error?.message || 'This PDF could not be opened.')} onScroll={reader.onViewerScroll} /></>}</div>{!isPptx && !sidebarOpen && <button className="sidebar-reopen" onClick={() => setSidebarOpen(true)} aria-label="Open sidebar" title="Open sidebar"><PanelLeftOpen size={18} /></button>}{!isPptx && <PDFControls pageNumber={reader.pageNumber} numPages={reader.numPages} onPrevious={previous} onNext={next} onPageChange={reader.setPageNumber} onZoom={reader.changeZoom} onBookmark={() => reader.toggleBookmark()} bookmarked={reader.bookmarks.includes(reader.pageNumber)} readingMode={reader.readingMode} onReadingMode={reader.setReadingMode} onFitWidth={reader.fitWidth} onFitPage={reader.fitPage} fullscreen={fullscreen} />}{showShortcuts && <Shortcuts onClose={() => setShowShortcuts(false)} />}</div>
 }
 
 function Shortcuts({ onClose }) { return <div className="modal-backdrop" onClick={onClose}><div className="shortcuts-modal" onClick={(event) => event.stopPropagation()}><div className="modal-heading"><div><p className="eyebrow">QUICK REFERENCE</p><h2>Keyboard shortcuts</h2></div><button className="icon-button" onClick={onClose} aria-label="Close shortcuts"><X size={17} /></button></div>{[['← / →', 'Previous or next page'], ['+ / −', 'Zoom in or out'], ['⌘ / Ctrl + F', 'Search document'], ['F', 'Toggle fullscreen'], ['Home / End', 'First or last page']].map(([key, label]) => <div className="shortcut-row" key={key}><kbd>{key}</kbd><span>{label}</span></div>)}</div></div> }
