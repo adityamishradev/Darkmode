@@ -1,0 +1,8 @@
+.reading-night .pdf-page {
+  background: #151b26;
+  filter: none;
+}
+
+.reading-night .pdf-page canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
