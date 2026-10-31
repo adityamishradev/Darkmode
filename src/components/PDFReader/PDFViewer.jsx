@@ -1,6 +1,8 @@
 import { AlertTriangle, LoaderCircle } from 'lucide-react'
 import { Document, Page } from 'react-pdf'
 import { useEffect, useState } from 'react'
+import 'react-pdf/dist/Page/TextLayer.css'
+import 'react-pdf/dist/Page/AnnotationLayer.css'
 
 export default function PDFViewer({ file, numPages, pageRefs, viewerRef, scale, rotation, readingMode, onLoad, onError, onScroll }) {
   const [documentError, setDocumentError] = useState('')

@@ -2,10 +2,12 @@ import { Download, FilePlus2, Maximize2, Minus, MoreHorizontal, Plus, RotateCw, 
 import ThemeToggle from '../ThemeToggle'
 import PWAStatus from '../PWAStatus'
 import RefreshButton from '../RefreshButton'
+import { downloadDarkDocument } from '../../utils/downloadDarkDocument'
 
 function ToolButton({ label, children, onClick, disabled = false, className = '' }) { return <button className={`icon-button ${className}`} aria-label={label} title={label} onClick={onClick} disabled={disabled}>{children}</button> }
 
-export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, onSearch, onZoom, onRotate, onFullscreen, theme, onThemeToggle, onDownload, onPrint, onMore, sidebarOpen, onSidebar, canInstall, onInstall, isOnline, isPptx = file?.name?.toLowerCase().endsWith('.pptx') }) {
+export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, onSearch, onZoom, onRotate, onFullscreen, theme, onThemeToggle, onDownload, onDarkDownload, onPrint, onMore, sidebarOpen, onSidebar, canInstall, onInstall, isOnline, isPptx = file?.name?.toLowerCase().endsWith('.pptx') }) {
+  const exportDark = onDarkDownload || (() => downloadDarkDocument({ fileName: file?.name || 'document.pdf', isPptx }).catch(() => undefined))
   return <header className="toolbar">
     <div className="brand"><div className="brand-mark">P</div><div className="brand-copy"><strong>PDF Reader</strong><span>Private document workspace</span></div></div>
     <div className="toolbar-divider" />
@@ -24,6 +26,7 @@ export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, 
       <ThemeToggle theme={theme} onToggle={onThemeToggle} />
       {!isPptx && <ToolButton label="Print document" onClick={onPrint} disabled={!file}><Printer size={17} /></ToolButton>}
       <ToolButton label="Download document" onClick={onDownload} disabled={!file}><Download size={17} /></ToolButton>
+      <ToolButton label="Download dark version" onClick={exportDark} disabled={!file}><Download size={15} /></ToolButton>
       <ToolButton label="More options" onClick={onMore}><MoreHorizontal size={18} /></ToolButton>
       <RefreshButton />
     </div>
