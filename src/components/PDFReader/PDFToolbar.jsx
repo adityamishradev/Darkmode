@@ -25,8 +25,8 @@ export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, 
       <ToolButton label="Fullscreen" onClick={onFullscreen}><Maximize2 size={17} /></ToolButton>
       <ThemeToggle theme={theme} onToggle={onThemeToggle} />
       {!isPptx && <ToolButton label="Print document" onClick={onPrint} disabled={!file}><Printer size={17} /></ToolButton>}
-      <ToolButton label="Download document" onClick={onDownload} disabled={!file}><Download size={17} /></ToolButton>
-      <ToolButton label="Download dark version" onClick={exportDark} disabled={!file}><Download size={15} /></ToolButton>
+      <ToolButton label="Download document" className="download-control" onClick={onDownload} disabled={!file}><Download size={17} /></ToolButton>
+      <ToolButton label="Download dark version" className="download-control dark-download-control" onClick={exportDark} disabled={!file}><Download size={15} /></ToolButton>
       <ToolButton label="More options" onClick={onMore}><MoreHorizontal size={18} /></ToolButton>
       <RefreshButton />
     </div>

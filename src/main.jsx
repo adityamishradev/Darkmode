@@ -5,8 +5,9 @@ import App from './App'
 import './index.css'
 import './upload-design.css'
 import { registerSW } from 'virtual:pwa-register'
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
+pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 let updateSW
 updateSW = registerSW({
 	immediate: true,

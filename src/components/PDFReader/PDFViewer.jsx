@@ -19,6 +19,9 @@ export default function PDFViewer({ file, numPages, pageRefs, viewerRef, scale, 
     setDocumentError(message)
     onError?.(error)
   }
+  const setCanvasFilter = (canvas) => {
+    if (canvas) canvas.style.filter = readingMode === 'night' ? 'invert(1) hue-rotate(180deg) brightness(.9)' : ''
+  }
   const handleScroll = () => {
     const viewer = viewerRef.current
     if (viewer && numPages) {
@@ -32,5 +35,5 @@ export default function PDFViewer({ file, numPages, pageRefs, viewerRef, scale, 
     }
     onScroll?.()
   }
-  return <section className={`viewer reading-${readingMode}`} ref={viewerRef} onScroll={handleScroll}><div className="page-stack">{documentError ? <div className="viewer-error"><AlertTriangle size={25} /><strong>Couldn’t render this PDF</strong><span>{documentError}</span><small>Try another PDF or check whether it is password protected.</small></div> : <Document file={file} onLoadSuccess={(result) => { setDocumentError(''); onLoad(result) }} onLoadError={handleError} loading={<div className="viewer-loading"><LoaderCircle className="spin" size={24} /><span>Preparing your document…</span></div>}>{Array.from({ length: numPages }, (_, index) => { const page = index + 1; return <div className={`pdf-page ${renderedPages.has(page) ? '' : 'pdf-page-placeholder'}`} key={page} ref={(node) => { pageRefs.current[page] = node }}>{renderedPages.has(page) ? <Page pageNumber={page} scale={scale} rotate={rotation} renderTextLayer renderAnnotationLayer loading={<div className="page-loading"><LoaderCircle className="spin" size={18} /></div>} /> : <div className="page-loading"><LoaderCircle className="spin" size={18} /></div>}</div> })}</Document>}</div></section>
+  return <section className={`viewer reading-${readingMode}`} ref={viewerRef} onScroll={handleScroll}><div className="page-stack">{documentError ? <div className="viewer-error"><AlertTriangle size={25} /><strong>Couldn’t render this PDF</strong><span>{documentError}</span><small>Try another PDF or check whether it is password protected.</small></div> : <Document file={file} onLoadSuccess={(result) => { setDocumentError(''); onLoad(result) }} onLoadError={handleError} loading={<div className="viewer-loading"><LoaderCircle className="spin" size={24} /><span>Preparing your document…</span></div>}>{Array.from({ length: numPages }, (_, index) => { const page = index + 1; return <div className={`pdf-page ${renderedPages.has(page) ? '' : 'pdf-page-placeholder'}`} key={page} ref={(node) => { pageRefs.current[page] = node }}>{renderedPages.has(page) ? <Page pageNumber={page} scale={scale} rotate={rotation} canvasRef={setCanvasFilter} renderTextLayer renderAnnotationLayer loading={<div className="page-loading"><LoaderCircle className="spin" size={18} /></div>} /> : <div className="page-loading"><LoaderCircle className="spin" size={18} /></div>}</div> })}</Document>}</div></section>
 }
