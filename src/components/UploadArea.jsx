@@ -1,5 +1,5 @@
-import { ChevronRight, FileSpreadsheet, FileText, FileUp, FolderOpen, Leaf, MoreVertical, Presentation, ShieldCheck, WifiOff, Zap } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { ChevronRight, FileSpreadsheet, FileText, FileUp, FolderOpen, Leaf, MoreVertical, Pencil, Presentation, ShieldCheck, Trash2, WifiOff, Zap } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 function formatSize(bytes) {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -12,7 +12,6 @@ function formatDate(ts) {
   const diff = now - ts
   const date = new Date(ts)
   const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
   if (diff < 60 * 60 * 1000) {
     const mins = Math.max(1, Math.floor(diff / 60000))
     return `${mins} min ago`
@@ -22,7 +21,86 @@ function formatDate(ts) {
   return date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-export default function UploadArea({ onOpen, error, isLoading, recentFiles = [] }) {
+// ── Three-dot dropdown ──────────────────────────────────────────────────────
+function FileMenu({ file, onDelete, onRename }) {
+  const [open, setOpen] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const [newName, setNewName] = useState(file.name)
+  const menuRef = useRef(null)
+  const inputRef = useRef(null)
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (!menuRef.current?.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  // Focus input when rename mode opens
+  useEffect(() => {
+    if (renaming) {
+      setNewName(file.name)
+      setTimeout(() => inputRef.current?.select(), 0)
+    }
+  }, [renaming, file.name])
+
+  const handleRename = () => {
+    onRename(file.name, newName)
+    setRenaming(false)
+    setOpen(false)
+  }
+
+  if (renaming) {
+    return (
+      <div className="rename-inline" onClick={(e) => e.stopPropagation()}>
+        <input
+          ref={inputRef}
+          className="rename-input"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleRename()
+            if (e.key === 'Escape') { setRenaming(false); setOpen(false) }
+          }}
+        />
+        <button className="rename-save" onClick={handleRename}>Save</button>
+        <button className="rename-cancel" onClick={() => { setRenaming(false); setOpen(false) }}>✕</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="file-menu-wrap" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+      <button
+        className="file-menu-btn"
+        aria-label="More options"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <MoreVertical size={18} />
+      </button>
+      {open && (
+        <div className="file-menu-dropdown">
+          <button
+            className="file-menu-item"
+            onClick={() => { setRenaming(true); setOpen(false) }}
+          >
+            <Pencil size={14} /> Edit name
+          </button>
+          <button
+            className="file-menu-item danger"
+            onClick={() => { onDelete(file.name); setOpen(false) }}
+          >
+            <Trash2 size={14} /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
+export default function UploadArea({ onOpen, error, isLoading, recentFiles = [], onDeleteRecent, onRenameRecent }) {
   const inputRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const accept = (files) => files?.[0] && onOpen(files[0])
@@ -60,7 +138,7 @@ export default function UploadArea({ onOpen, error, isLoading, recentFiles = [] 
         {error && <p className="error-text">{error}</p>}
       </div>
 
-      {/* Recent Files — only shown when there's real history */}
+      {/* Recent Files */}
       {recentFiles.length > 0 && (
         <section className="recent-files" aria-label="Recent files">
           <div className="recent-heading">
@@ -79,7 +157,11 @@ export default function UploadArea({ onOpen, error, isLoading, recentFiles = [] 
                   <strong>{f.name}</strong>
                   <small>{formatSize(f.size)} · {formatDate(f.openedAt)}</small>
                 </span>
-                <MoreVertical size={18} />
+                <FileMenu
+                  file={f}
+                  onDelete={onDeleteRecent}
+                  onRename={onRenameRecent}
+                />
               </div>
             ))}
           </div>
@@ -92,7 +174,7 @@ export default function UploadArea({ onOpen, error, isLoading, recentFiles = [] 
         </section>
       )}
 
-      {/* No recent files yet — show features grid only */}
+      {/* No recent files yet */}
       {recentFiles.length === 0 && (
         <section className="recent-files" aria-label="Features">
           <div className="landing-features">

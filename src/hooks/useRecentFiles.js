@@ -11,6 +11,11 @@ function loadRecent() {
   }
 }
 
+function save(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+  return list
+}
+
 export function useRecentFiles() {
   const [recentFiles, setRecentFiles] = useState(loadRecent)
 
@@ -22,12 +27,25 @@ export function useRecentFiles() {
       openedAt: Date.now(),
     }
     setRecentFiles((prev) => {
-      // Remove duplicate (same name), add new at top, limit to MAX_RECENT
       const updated = [entry, ...prev.filter((f) => f.name !== entry.name)].slice(0, MAX_RECENT)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-      return updated
+      return save(updated)
     })
   }, [])
 
-  return { recentFiles, addRecentFile }
+  const deleteRecentFile = useCallback((name) => {
+    setRecentFiles((prev) => save(prev.filter((f) => f.name !== name)))
+  }, [])
+
+  const renameRecentFile = useCallback((oldName, newName) => {
+    const trimmed = newName.trim()
+    if (!trimmed || trimmed === oldName) return
+    setRecentFiles((prev) => {
+      const updated = prev.map((f) =>
+        f.name === oldName ? { ...f, name: trimmed } : f
+      )
+      return save(updated)
+    })
+  }, [])
+
+  return { recentFiles, addRecentFile, deleteRecentFile, renameRecentFile }
 }
