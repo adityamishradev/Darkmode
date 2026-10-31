@@ -29,9 +29,9 @@ export default defineConfig({
         },
       ],
       icons: [
-        { src: '/icons/pdf-reader-192.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
-        { src: '/icons/pdf-reader-512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
-        { src: '/icons/pdf-reader-maskable.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
+        { src: '/icons/pdf-reader-app.svg', sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
+        { src: '/icons/pdf-reader-app.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+        { src: '/icons/pdf-reader-app.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
       ],
     },
     workbox: {
