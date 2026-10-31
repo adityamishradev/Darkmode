@@ -164,6 +164,7 @@ body { background: var(--surface-0); color: var(--text); }
 .pages-section .thumbnail-list { height: min(280px, 32vh); max-height: 280px; flex: 0 0 auto; }
 .bookmark-section { margin-top: 16px; }
 .pdf-page { width: min(100%, 1000px); max-width: 100%; overflow: hidden; }
+.pdf-page-placeholder { min-height: min(1100px, 130vw); }
 .pdf-page canvas { max-width: 100% !important; height: auto !important; }
 .viewer { background: #0e151e; }
 .page-stack { padding: 38px clamp(22px, 6vw, 108px) 62px; gap: 34px; }
