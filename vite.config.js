@@ -6,7 +6,7 @@ export default defineConfig({
   server: { host: true },
   preview: { host: true },
   plugins: [react(), VitePWA({
-    registerType: 'autoUpdate',
+    registerType: 'prompt',
     strategies: 'generateSW',
     filename: 'sw.js',
     injectRegister: 'auto',
