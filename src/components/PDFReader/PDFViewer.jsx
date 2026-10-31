@@ -8,6 +8,9 @@ import './night-mode.css'
 // Shared Document options — prevents re-parsing the PDF on every re-render
 const PDF_OPTIONS = { cMapUrl: 'https://unpkg.com/pdfjs-dist/cmaps/', cMapPacked: true }
 
+// Use device pixel ratio for sharp rendering on high-DPI screens (retina, etc.)
+const DEVICE_PIXEL_RATIO = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 3) : 1
+
 export default function PDFViewer({ file, numPages, pageRefs, viewerRef, scale, rotation, readingMode, onLoad, onError, onScroll }) {
   const [documentError, setDocumentError] = useState('')
   const [renderedPages, setRenderedPages] = useState(() => new Set([1, 2]))
@@ -35,5 +38,5 @@ export default function PDFViewer({ file, numPages, pageRefs, viewerRef, scale, 
     }
     onScroll?.()
   }
-  return <section className={`viewer reading-${readingMode}`} ref={viewerRef} onScroll={handleScroll}><div className="page-stack">{documentError ? <div className="viewer-error"><AlertTriangle size={25} /><strong>Couldn’t render this PDF</strong><span>{documentError}</span><small>Try another PDF or check whether it is password protected.</small></div> : <Document file={file} options={PDF_OPTIONS} onLoadSuccess={(result) => { setDocumentError(''); onLoad(result) }} onLoadError={handleError} loading={<div className="viewer-loading"><LoaderCircle className="spin" size={24} /><span>Preparing your document…</span></div>}>{Array.from({ length: numPages }, (_, index) => { const page = index + 1; return <div className={`pdf-page ${renderedPages.has(page) ? '' : 'pdf-page-placeholder'}`} key={page} ref={(node) => { pageRefs.current[page] = node }}>{renderedPages.has(page) ? <Page pageNumber={page} scale={scale} rotate={rotation} renderTextLayer renderAnnotationLayer loading={<div className="page-loading"><LoaderCircle className="spin" size={18} /></div>} /> : <div className="page-loading"><LoaderCircle className="spin" size={18} /></div>}</div> })}</Document>}</div></section>
+  return <section className={`viewer reading-${readingMode}`} ref={viewerRef} onScroll={handleScroll}><div className="page-stack">{documentError ? <div className="viewer-error"><AlertTriangle size={25} /><strong>Couldn’t render this PDF</strong><span>{documentError}</span><small>Try another PDF or check whether it is password protected.</small></div> : <Document file={file} options={PDF_OPTIONS} onLoadSuccess={(result) => { setDocumentError(''); onLoad(result) }} onLoadError={handleError} loading={<div className="viewer-loading"><LoaderCircle className="spin" size={24} /><span>Preparing your document…</span></div>}>{Array.from({ length: numPages }, (_, index) => { const page = index + 1; return <div className={`pdf-page ${renderedPages.has(page) ? '' : 'pdf-page-placeholder'}`} key={page} ref={(node) => { pageRefs.current[page] = node }}>{renderedPages.has(page) ? <Page pageNumber={page} scale={scale} rotate={rotation} devicePixelRatio={DEVICE_PIXEL_RATIO} renderTextLayer renderAnnotationLayer loading={<div className="page-loading"><LoaderCircle className="spin" size={18} /></div>} /> : <div className="page-loading"><LoaderCircle className="spin" size={18} /></div>}</div> })}</Document>}</div></section>
 }

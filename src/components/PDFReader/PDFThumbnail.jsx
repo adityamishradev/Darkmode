@@ -1,5 +1,7 @@
 import { Page } from 'react-pdf'
 
+const DEVICE_PIXEL_RATIO = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 3) : 1
+
 export default function PDFThumbnail({ page, selected, onSelect }) {
   return (
     <button
@@ -11,6 +13,7 @@ export default function PDFThumbnail({ page, selected, onSelect }) {
         <Page
           pageNumber={page}
           width={100}
+          devicePixelRatio={DEVICE_PIXEL_RATIO}
           renderTextLayer={false}
           renderAnnotationLayer={false}
         />
