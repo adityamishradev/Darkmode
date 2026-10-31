@@ -10,6 +10,10 @@ export default function PDFViewer({ file, numPages, pageRefs, viewerRef, scale, 
   const [renderedPages, setRenderedPages] = useState(() => new Set([1, 2, 3]))
   useEffect(() => setDocumentError(''), [file])
   useEffect(() => setRenderedPages(new Set([1, 2, 3])), [file])
+  useEffect(() => {
+    window.__pdfReaderFile = file
+    return () => { if (window.__pdfReaderFile === file) delete window.__pdfReaderFile }
+  }, [file])
   const handleError = (error) => {
     const message = error?.message || 'The PDF could not be read.'
     setDocumentError(message)

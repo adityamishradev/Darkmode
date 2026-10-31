@@ -1,6 +1,5 @@
 import { jsPDF } from 'jspdf'
-
-const NIGHT_FILTER = 'invert(88%) hue-rotate(180deg) brightness(82%) contrast(94%)'
+import { pdfjs } from 'react-pdf'
 
 const loadImage = (source) => new Promise((resolve, reject) => {
   const image = new Image()
@@ -27,20 +26,39 @@ const darkenCanvas = (source) => {
   canvas.width = source.width
   canvas.height = source.height
   const context = canvas.getContext('2d')
-  context.filter = NIGHT_FILTER
   context.drawImage(source, 0, 0)
+  const image = context.getImageData(0, 0, canvas.width, canvas.height)
+  for (let index = 0; index < image.data.length; index += 4) {
+    image.data[index] = 255 - image.data[index]
+    image.data[index + 1] = 255 - image.data[index + 1]
+    image.data[index + 2] = 255 - image.data[index + 2]
+  }
+  context.putImageData(image, 0, 0)
   return canvas
 }
 
-export async function downloadDarkDocument({ fileName, isPptx }) {
-  const selector = isPptx
-    ? '.pptx-container canvas, .pptx-container svg, .pptx-container img'
-    : '.pdf-page canvas'
-  const elements = [...document.querySelectorAll(selector)]
-  if (!elements.length) throw new Error('Wait for the document to finish rendering, then try again.')
-
+const renderPdfPages = async () => {
+  const file = window.__pdfReaderFile
+  if (!file) throw new Error('Open a PDF before downloading its dark version.')
+  const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise
   const pages = []
-  for (const element of elements) pages.push(darkenCanvas(await renderElement(element)))
+  for (let number = 1; number <= pdf.numPages; number += 1) {
+    const page = await pdf.getPage(number)
+    const viewport = page.getViewport({ scale: 1.5 })
+    const canvas = document.createElement('canvas')
+    canvas.width = viewport.width
+    canvas.height = viewport.height
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise
+    pages.push(darkenCanvas(canvas))
+  }
+  return pages
+}
+
+export async function downloadDarkDocument({ fileName, isPptx }) {
+  const pages = isPptx
+    ? await Promise.all([...document.querySelectorAll('.pptx-container canvas, .pptx-container svg, .pptx-container img')].map(async (element) => darkenCanvas(await renderElement(element))))
+    : await renderPdfPages()
+  if (!pages.length) throw new Error('Wait for the document to finish rendering, then try again.')
 
   const first = pages[0]
   const pdf = new jsPDF({ orientation: first.width > first.height ? 'landscape' : 'portrait', unit: 'pt', format: [first.width, first.height] })

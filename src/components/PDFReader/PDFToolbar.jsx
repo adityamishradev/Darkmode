@@ -7,7 +7,7 @@ import { downloadDarkDocument } from '../../utils/downloadDarkDocument'
 function ToolButton({ label, children, onClick, disabled = false, className = '' }) { return <button className={`icon-button ${className}`} aria-label={label} title={label} onClick={onClick} disabled={disabled}>{children}</button> }
 
 export default function PDFToolbar({ file, pageNumber, numPages, scale, onOpen, onSearch, onZoom, onRotate, onFullscreen, theme, onThemeToggle, onDownload, onDarkDownload, onPrint, onMore, sidebarOpen, onSidebar, canInstall, onInstall, isOnline, isPptx = file?.name?.toLowerCase().endsWith('.pptx') }) {
-  const exportDark = onDarkDownload || (() => downloadDarkDocument({ fileName: file?.name || 'document.pdf', isPptx }).catch(() => undefined))
+  const exportDark = onDarkDownload || (() => downloadDarkDocument({ fileName: file?.name || 'document.pdf', isPptx }).catch((error) => window.alert(error?.message || 'The dark version could not be downloaded.')))
   return <header className="toolbar">
     <div className="brand"><div className="brand-mark">P</div><div className="brand-copy"><strong>PDF Reader</strong><span>Private document workspace</span></div></div>
     <div className="toolbar-divider" />
