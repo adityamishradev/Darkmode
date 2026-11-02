@@ -1,0 +1,378 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PDF Annotation Overlay Styles
+   All annotation elements are absolutely positioned inside .pdf-page
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Annotation overlay container (sibling to react-pdf Page, inside .pdf-page) */
+.annotation-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* pass through to text layer by default */
+  z-index: 3; /* above canvas (z1), textLayer (z2), below sticky notes (z4) */
+  overflow: hidden;
+}
+
+/* When a text-selection tool is active, capture mouse events on the page */
+.pdf-page.tool-active .annotation-overlay {
+  pointer-events: auto;
+}
+
+/* ── Base annotation rect (highlight, underline, strikethrough) ── */
+.ann-rect {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 1px;
+  transition: opacity .15s;
+}
+.ann-rect:hover { outline: 1.5px solid rgba(255,255,255,.45); outline-offset: 1px; }
+
+/* ── Highlight ── */
+.ann-highlight { opacity: .38; mix-blend-mode: multiply; }
+.reading-night .ann-highlight { mix-blend-mode: screen; opacity: .45; }
+
+/* Highlight colours */
+.ann-highlight.color-yellow  { background: #ffd600; }
+.ann-highlight.color-green   { background: #00e676; }
+.ann-highlight.color-pink    { background: #ff4081; }
+.ann-highlight.color-blue    { background: #2979ff; }
+.ann-highlight.color-orange  { background: #ff6d00; }
+
+/* ── Underline ── */
+.ann-underline {
+  background: transparent;
+  border-bottom: 2.5px solid currentColor;
+  opacity: .9;
+}
+.ann-underline.color-yellow  { color: #ffd600; }
+.ann-underline.color-green   { color: #00c853; }
+.ann-underline.color-pink    { color: #ff4081; }
+.ann-underline.color-blue    { color: #2979ff; }
+.ann-underline.color-orange  { color: #ff6d00; }
+.ann-underline.color-red     { color: #f44336; }
+
+/* ── Strikethrough ── */
+.ann-strikethrough {
+  background: transparent;
+  position: absolute;
+}
+.ann-strikethrough::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: currentColor;
+  border-radius: 1px;
+  opacity: .85;
+}
+.ann-strikethrough.color-yellow  { color: #ffd600; }
+.ann-strikethrough.color-green   { color: #00c853; }
+.ann-strikethrough.color-pink    { color: #ff4081; }
+.ann-strikethrough.color-blue    { color: #2979ff; }
+.ann-strikethrough.color-orange  { color: #ff6d00; }
+.ann-strikethrough.color-red     { color: #f44336; }
+
+/* ── Tick / Checkbox ── */
+.ann-tick {
+  position: absolute;
+  pointer-events: auto;
+  cursor: move;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+  z-index: 4;
+  transition: transform .1s;
+}
+.ann-tick:hover { transform: scale(1.15); }
+.ann-tick.type-tick     { background: rgba(0,200,83,.25); color: #00c853; border: 1.5px solid rgba(0,200,83,.6); }
+.ann-tick.type-checkbox { background: rgba(77,156,255,.18); color: #4d9cff; border: 1.5px solid rgba(77,156,255,.5); }
+.ann-tick.type-cross    { background: rgba(244,67,54,.18); color: #f44336; border: 1.5px solid rgba(244,67,54,.5); }
+.ann-tick-drag          { cursor: move; }
+
+/* ── Sticky note ── */
+.ann-note {
+  position: absolute;
+  pointer-events: auto;
+  z-index: 5;
+  cursor: move;
+  user-select: none;
+}
+.ann-note-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px 7px 7px 2px;
+  display: grid; place-items: center;
+  font-size: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.35);
+  transition: transform .12s;
+}
+.ann-note-icon:hover { transform: scale(1.12); }
+.ann-note.color-yellow .ann-note-icon  { background: #ffd600; color: #3a2e00; }
+.ann-note.color-green  .ann-note-icon  { background: #00c853; color: #003d17; }
+.ann-note.color-pink   .ann-note-icon  { background: #ff4081; color: #fff; }
+.ann-note.color-blue   .ann-note-icon  { background: #2979ff; color: #fff; }
+.ann-note.color-orange .ann-note-icon  { background: #ff6d00; color: #fff; }
+
+/* ── Note popup (when clicking a note icon) ── */
+.ann-note-popup {
+  position: absolute;
+  top: 32px; left: 0;
+  min-width: 220px; max-width: 300px;
+  background: #1a2537;
+  border: 1px solid var(--line-strong, rgba(184,204,224,.24));
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.55);
+  z-index: 20;
+  display: flex; flex-direction: column; gap: 7px;
+}
+.ann-note-popup textarea {
+  width: 100%; min-height: 80px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 6px;
+  color: #e8f0fb;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  padding: 7px 9px;
+  resize: vertical;
+  outline: none;
+  line-height: 1.55;
+}
+.ann-note-popup textarea:focus { border-color: var(--accent, #4d9cff); }
+.ann-note-popup-actions {
+  display: flex; gap: 6px; justify-content: flex-end;
+}
+.ann-note-popup-actions button {
+  height: 27px; padding: 0 10px;
+  border-radius: 6px; font-size: 10px;
+  border: 1px solid transparent;
+  transition: .15s ease;
+}
+.ann-note-save   { background: var(--accent-strong, #2d7fe4); color: #fff; }
+.ann-note-save:hover { background: var(--accent, #4d9cff); }
+.ann-note-delete { background: transparent; color: #f87171; border-color: rgba(248,113,113,.35); }
+.ann-note-delete:hover { background: rgba(244,67,54,.15); }
+
+/* ── Annotation delete handle (appears on hover for rects) ── */
+.ann-delete-btn {
+  position: absolute;
+  top: -9px; right: -9px;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: #f44336;
+  color: #fff;
+  font-size: 10px;
+  display: none;
+  place-items: center;
+  cursor: pointer;
+  z-index: 10;
+  border: 1.5px solid #fff;
+  line-height: 1;
+}
+.ann-rect:hover .ann-delete-btn { display: grid; }
+
+/* ── Annotation toolbar (floating colour picker) ── */
+.ann-toolbar {
+  position: fixed;
+  z-index: 200;
+  background: #141e2b;
+  border: 1px solid rgba(184,204,224,.22);
+  border-radius: 12px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+  animation: ann-toolbar-in .12s ease;
+  pointer-events: auto;
+}
+@keyframes ann-toolbar-in {
+  from { opacity: 0; transform: translateY(6px) scale(.95); }
+  to   { opacity: 1; transform: none; }
+}
+.ann-toolbar-label {
+  font-size: 9px;
+  color: var(--muted, #94a4b5);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: .08em;
+  white-space: nowrap;
+  padding-right: 4px;
+  border-right: 1px solid rgba(255,255,255,.1);
+}
+.ann-color-btn {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform .12s, border-color .12s;
+  flex: 0 0 auto;
+}
+.ann-color-btn:hover,
+.ann-color-btn.selected { border-color: #fff; transform: scale(1.18); }
+.ann-apply-btn {
+  height: 26px; padding: 0 10px;
+  border-radius: 7px;
+  background: var(--accent-strong, #2d7fe4);
+  color: #fff;
+  font-size: 10px;
+  border: 0;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: .15s ease;
+  white-space: nowrap;
+}
+.ann-apply-btn:hover { background: var(--accent, #4d9cff); }
+.ann-cancel-btn {
+  height: 26px; padding: 0 8px;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted, #94a4b5);
+  font-size: 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  cursor: pointer;
+  transition: .15s ease;
+}
+.ann-cancel-btn:hover { color: #fff; border-color: rgba(255,255,255,.3); }
+
+/* ── Annotation tool buttons in toolbar (active state) ── */
+.icon-button.ann-tool-active {
+  background: rgba(77,156,255,.2) !important;
+  border-color: rgba(77,156,255,.6) !important;
+  color: #90c8ff !important;
+}
+
+/* ── Tick drop mode cursor ── */
+.viewer.tick-drop-mode { cursor: crosshair !important; }
+.viewer.tick-drop-mode .pdf-page { cursor: crosshair; }
+
+/* ── Annotation panel in sidebar ── */
+.ann-panel-tabs {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+.ann-panel-tab {
+  flex: 1;
+  height: 27px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid var(--line, rgba(184,204,224,.14));
+  color: var(--muted, #94a4b5);
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: .15s ease;
+}
+.ann-panel-tab.active {
+  background: rgba(77,156,255,.15);
+  border-color: rgba(77,156,255,.45);
+  color: #cce3ff;
+}
+.ann-panel-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 260px;
+}
+.ann-panel-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: var(--surface-2, #17212d);
+  border: 1px solid var(--line, rgba(184,204,224,.14));
+  cursor: pointer;
+  transition: .15s ease;
+}
+.ann-panel-item:hover {
+  border-color: var(--line-strong, rgba(184,204,224,.24));
+  background: var(--surface-3, #1d2a38);
+}
+.ann-panel-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.ann-panel-body { min-width: 0; flex: 1; }
+.ann-panel-type {
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted, #94a4b5);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.ann-panel-text {
+  font-size: 10px;
+  color: var(--text, #f4f7fb);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+  margin-top: 2px;
+}
+.ann-panel-page {
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  color: var(--muted, #94a4b5);
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+.ann-panel-del {
+  background: transparent;
+  color: #f87171;
+  font-size: 13px;
+  border: 0;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0;
+  transition: opacity .12s;
+  line-height: 1;
+}
+.ann-panel-item:hover .ann-panel-del { opacity: 1; }
+.ann-panel-empty {
+  font-size: 10px;
+  color: var(--muted, #94a4b5);
+  line-height: 1.65;
+  padding: 4px;
+}
+
+/* ── Filter chips ── */
+.ann-filter-row {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ann-filter-chip {
+  height: 22px; padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 9px;
+  cursor: pointer;
+  transition: .12s ease;
+}
+.ann-filter-chip.active {
+  border-color: var(--accent, #4d9cff);
+  background: rgba(77,156,255,.14);
+  color: #cce3ff;
+}
+
+/* ── Responsive ── */
+@media (max-width: 800px) {
+  .ann-toolbar { font-size: 10px; gap: 4px; padding: 5px 7px; }
+  .ann-color-btn { width: 18px; height: 18px; }
+}
