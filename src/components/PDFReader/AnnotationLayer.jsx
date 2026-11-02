@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-// ── Colour definitions ─────────────────────────────────────────────────────
-export const COLORS = [
-  { id: 'yellow', hex: '#ffd600', label: 'Yellow' },
-  { id: 'green',  hex: '#00c853', label: 'Green'  },
-  { id: 'pink',   hex: '#ff4081', label: 'Pink'   },
-  { id: 'blue',   hex: '#2979ff', label: 'Blue'   },
-  { id: 'orange', hex: '#ff6d00', label: 'Orange' },
-  { id: 'red',    hex: '#f44336', label: 'Red'    },
+export const PRESET_COLORS = [
+  { id: 'yellow', hex: '#ffd600' },
+  { id: 'green',  hex: '#00c853' },
+  { id: 'pink',   hex: '#ff4081' },
+  { id: 'blue',   hex: '#2979ff' },
+  { id: 'orange', hex: '#ff6d00' },
+  { id: 'red',    hex: '#f44336' },
+  { id: 'purple', hex: '#aa00ff' },
+  { id: 'cyan',   hex: '#00bcd4' },
 ]
 
 export const TYPE_LABELS = {
@@ -21,96 +22,151 @@ export const TYPE_LABELS = {
 const parsePct = (v) => (typeof v === 'string' ? parseFloat(v) : v)
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Floating colour-picker toolbar
+// AnnFloatingToolbar — colour picker + size slider + custom colour
 // ─────────────────────────────────────────────────────────────────────────────
 export function AnnFloatingToolbar({ position, tool, onApply, onCancel }) {
-  const [selectedColor, setSelectedColor] = useState('yellow')
+  const [color, setColor]   = useState('#ffd600')
+  const [size,  setSize]    = useState(tool === 'highlight' ? 100 : tool === 'underline' ? 2 : 2)
   const ref = useRef(null)
 
-  const options =
-    tool === 'tick'
-      ? [
-          { id: 'tick',     hex: '#00c853', label: '✓ Tick'  },
-          { id: 'checkbox', hex: '#2979ff', label: '☑ Check' },
-          { id: 'cross',    hex: '#f44336', label: '✕ Cross' },
-        ]
-      : COLORS
+  const isTextTool  = tool === 'highlight' || tool === 'underline' || tool === 'strikethrough'
+  const isTickTool  = tool === 'tick'
+  const showSize    = tool === 'underline' || tool === 'strikethrough'
 
+  const tickOptions = [
+    { hex: '#00c853', id: 'tick',     label: '✓' },
+    { hex: '#2979ff', id: 'checkbox', label: '☑' },
+    { hex: '#f44336', id: 'cross',    label: '✕' },
+  ]
+
+  // Dismiss on outside click — delayed by one animation frame so the
+  // mouseup that opened the toolbar doesn't immediately close it
   useEffect(() => {
-    // Delay attachment by one frame so the triggering mouseup doesn't
-    // immediately dismiss the toolbar
     let handler
-    const tid = requestAnimationFrame(() => {
+    const raf = requestAnimationFrame(() => {
       handler = (e) => {
         if (ref.current && !ref.current.contains(e.target)) onCancel()
       }
       document.addEventListener('mousedown', handler)
     })
-    return () => {
-      cancelAnimationFrame(tid)
-      if (handler) document.removeEventListener('mousedown', handler)
-    }
+    return () => { cancelAnimationFrame(raf); if (handler) document.removeEventListener('mousedown', handler) }
   }, [onCancel])
 
   if (!position) return null
 
+  const style = {
+    position: 'fixed',
+    top:  Math.min(position.y, window.innerHeight - 160),
+    left: Math.max(8, Math.min(position.x, window.innerWidth - 340)),
+    zIndex: 99999,
+  }
+
   return (
-    <div
-      ref={ref}
-      className="ann-toolbar"
-      style={{
-        position: 'fixed',
-        top:  Math.min(position.y, window.innerHeight - 70),
-        left: Math.max(8, Math.min(position.x, window.innerWidth - 330)),
-        zIndex: 9999,
-      }}
-      onMouseDown={(e) => e.stopPropagation()}
-    >
-      <span className="ann-toolbar-label">{TYPE_LABELS[tool] || tool}</span>
-      {options.map((c) => (
-        <button
-          key={c.id}
-          className={`ann-color-btn${selectedColor === c.id ? ' selected' : ''}`}
-          style={{ background: c.hex }}
-          title={c.label}
-          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedColor(c.id) }}
-          aria-label={c.label}
-        />
-      ))}
-      <button className="ann-apply-btn"
-        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onApply(selectedColor) }}>
+    <div ref={ref} className="ann-toolbar ann-toolbar-v2" style={style}
+      onMouseDown={(e) => e.stopPropagation()}>
+
+      <div className="ann-tb-header">
+        <span className="ann-toolbar-label">{TYPE_LABELS[tool] || tool}</span>
+        <button className="ann-cancel-btn" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onCancel() }}>✕</button>
+      </div>
+
+      {isTickTool ? (
+        // Tick tool — 3 type options
+        <div className="ann-tb-row">
+          {tickOptions.map((t) => (
+            <button key={t.id}
+              className={`ann-tick-opt${color === t.hex ? ' selected' : ''}`}
+              style={{ borderColor: t.hex, color: t.hex }}
+              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setColor(t.hex) }}>
+              {t.label} {t.id}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <>
+          {/* Preset colour swatches */}
+          <div className="ann-tb-row ann-tb-colors">
+            {PRESET_COLORS.map((c) => (
+              <button key={c.id}
+                className={`ann-color-btn${color === c.hex ? ' selected' : ''}`}
+                style={{ background: c.hex }}
+                title={c.id}
+                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setColor(c.hex) }}
+                aria-label={c.id}
+              />
+            ))}
+          </div>
+
+          {/* Custom colour picker */}
+          <div className="ann-tb-row">
+            <label className="ann-custom-label">Custom:</label>
+            <input
+              type="color"
+              value={color}
+              className="ann-custom-color"
+              onChange={(e) => setColor(e.target.value)}
+              onMouseDown={(e) => e.stopPropagation()}
+              title="Pick custom colour"
+            />
+            <span className="ann-hex-val">{color}</span>
+          </div>
+
+          {/* Size slider (underline / strikethrough only) */}
+          {showSize && (
+            <div className="ann-tb-row">
+              <label className="ann-custom-label">Size: {size}px</label>
+              <input
+                type="range" min="1" max="8" value={size}
+                className="ann-size-slider"
+                onChange={(e) => setSize(Number(e.target.value))}
+                onMouseDown={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+
+          {/* Opacity/thickness preview */}
+          <div className="ann-tb-preview">
+            {tool === 'highlight' && (
+              <div style={{ height: 18, background: color, opacity: 0.4, borderRadius: 3, flex: 1 }} />
+            )}
+            {tool === 'underline' && (
+              <div style={{ height: size, background: color, borderRadius: 2, flex: 1, alignSelf: 'flex-end' }} />
+            )}
+            {tool === 'strikethrough' && (
+              <div style={{ height: size, background: color, borderRadius: 2, flex: 1, alignSelf: 'center' }} />
+            )}
+          </div>
+        </>
+      )}
+
+      <button className="ann-apply-btn ann-apply-full"
+        onMouseDown={(e) => {
+          e.preventDefault(); e.stopPropagation()
+          onApply(color, size)
+        }}>
         Apply
-      </button>
-      <button className="ann-cancel-btn"
-        onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onCancel() }}>
-        ✕
       </button>
     </div>
   )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sticky-note popup
+// NotePopup
 // ─────────────────────────────────────────────────────────────────────────────
 function NotePopup({ annotation, onSave, onDelete, onClose }) {
   const [text, setText] = useState(annotation.noteText || '')
   const ref = useRef(null)
-
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose() }
     const tid = setTimeout(() => document.addEventListener('mousedown', h), 0)
     return () => { clearTimeout(tid); document.removeEventListener('mousedown', h) }
   }, [onClose])
-
   return (
     <div className="ann-note-popup" ref={ref}
       onMouseDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-      <textarea
-        autoFocus value={text}
-        onChange={(e) => setText(e.target.value)}
+      <textarea autoFocus value={text} onChange={(e) => setText(e.target.value)}
         placeholder="Write your note…"
-        onKeyDown={(e) => { if (e.key === 'Escape') onClose() }}
-      />
+        onKeyDown={(e) => { if (e.key === 'Escape') onClose() }} />
       <div className="ann-note-popup-actions">
         <button className="ann-note-delete" onClick={() => { onDelete(annotation.id); onClose() }}>Delete</button>
         <button className="ann-note-save"   onClick={() => { onSave(annotation.id, text); onClose() }}>Save</button>
@@ -120,25 +176,46 @@ function NotePopup({ annotation, onSave, onDelete, onClose }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Highlight / Underline / Strikethrough rect
+// AnnRect — rendered highlight / underline / strikethrough
 // ─────────────────────────────────────────────────────────────────────────────
 function AnnRect({ ann, onDelete }) {
+  const style = {
+    position: 'absolute',
+    left: ann.x, top: ann.y, width: ann.width, height: ann.height,
+    pointerEvents: 'auto',
+    cursor: 'pointer',
+    borderRadius: 1,
+  }
+  if (ann.type === 'highlight') {
+    style.background = ann.color || '#ffd600'
+    style.opacity = ann.opacity || 0.38
+    style.mixBlendMode = 'multiply'
+  } else if (ann.type === 'underline') {
+    style.background = 'transparent'
+    style.borderBottom = `${ann.size || 2}px solid ${ann.color || '#ffd600'}`
+    style.opacity = 0.9
+  } else if (ann.type === 'strikethrough') {
+    style.background = 'transparent'
+    style.position = 'absolute'
+  }
+
   return (
-    <div
-      className={`ann-rect ann-${ann.type} color-${ann.color}`}
-      style={{ left: ann.x, top: ann.y, width: ann.width, height: ann.height }}
-      title={`${TYPE_LABELS[ann.type] || ann.type} — hover × to remove`}
-    >
+    <div className={`ann-rect ann-${ann.type}`} style={style}
+      title={`${TYPE_LABELS[ann.type] || ann.type} — hover × to remove`}>
+      {ann.type === 'strikethrough' && (
+        <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: ann.size || 2,
+          background: ann.color || '#ffd600', transform: 'translateY(-50%)', borderRadius: 1 }} />
+      )}
       <button className="ann-delete-btn"
         onMouseDown={(e) => { e.stopPropagation(); e.preventDefault() }}
-        onClick={(e)      => { e.stopPropagation(); onDelete(ann.id) }}
-        aria-label="Remove annotation">×</button>
+        onClick={(e) => { e.stopPropagation(); onDelete(ann.id) }}
+        aria-label="Remove">×</button>
     </div>
   )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tick / checkbox mark (draggable)
+// AnnTick
 // ─────────────────────────────────────────────────────────────────────────────
 function AnnTick({ ann, onDelete, onMove }) {
   const handleMouseDown = (e) => {
@@ -148,16 +225,15 @@ function AnnTick({ ann, onDelete, onMove }) {
     if (!pageEl) return
     const pr = pageEl.getBoundingClientRect()
     const sx = e.clientX, sy = e.clientY
-    const ox = parsePct(ann.x) * pr.width  / 100
+    const ox = parsePct(ann.x) * pr.width / 100
     const oy = parsePct(ann.y) * pr.height / 100
     const move = (me) => {
-      const nx = Math.max(0, Math.min(95, ((ox + me.clientX - sx) / pr.width)  * 100))
-      const ny = Math.max(0, Math.min(95, ((oy + me.clientY - sy) / pr.height) * 100))
-      onMove(ann.id, `${nx}%`, `${ny}%`)
+      onMove(ann.id,
+        `${Math.max(0, Math.min(95, ((ox + me.clientX - sx) / pr.width)  * 100)).toFixed(3)}%`,
+        `${Math.max(0, Math.min(95, ((oy + me.clientY - sy) / pr.height) * 100)).toFixed(3)}%`)
     }
     const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
+    window.addEventListener('mousemove', move); window.addEventListener('mouseup', up)
   }
   const sym = ann.tickType === 'checkbox' ? '☑' : ann.tickType === 'cross' ? '✕' : '✓'
   return (
@@ -165,14 +241,12 @@ function AnnTick({ ann, onDelete, onMove }) {
       style={{ left: ann.x, top: ann.y }}
       onMouseDown={handleMouseDown}
       onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(ann.id) }}
-      title="Drag to move · Right-click to delete">
-      {sym}
-    </div>
+      title="Drag · Right-click to delete">{sym}</div>
   )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sticky note (draggable)
+// AnnNote
 // ─────────────────────────────────────────────────────────────────────────────
 function AnnNote({ ann, onDelete, onUpdate, onMove }) {
   const [showPopup, setShowPopup] = useState(false)
@@ -184,28 +258,25 @@ function AnnNote({ ann, onDelete, onUpdate, onMove }) {
     if (!pageEl) return
     const pr = pageEl.getBoundingClientRect()
     const sx = e.clientX, sy = e.clientY
-    const ox = parsePct(ann.x) * pr.width  / 100
+    const ox = parsePct(ann.x) * pr.width / 100
     const oy = parsePct(ann.y) * pr.height / 100
     const move = (me) => {
-      const nx = Math.max(0, Math.min(95, ((ox + me.clientX - sx) / pr.width)  * 100))
-      const ny = Math.max(0, Math.min(95, ((oy + me.clientY - sy) / pr.height) * 100))
-      onMove(ann.id, `${nx}%`, `${ny}%`)
+      onMove(ann.id,
+        `${Math.max(0, Math.min(95, ((ox + me.clientX - sx) / pr.width)  * 100)).toFixed(3)}%`,
+        `${Math.max(0, Math.min(95, ((oy + me.clientY - sy) / pr.height) * 100)).toFixed(3)}%`)
     }
     const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up) }
-    window.addEventListener('mousemove', move)
-    window.addEventListener('mouseup', up)
+    window.addEventListener('mousemove', move); window.addEventListener('mouseup', up)
   }
   return (
     <div className={`ann-note color-${ann.color || 'yellow'}`}
       style={{ left: ann.x, top: ann.y }} onMouseDown={handleMouseDown}>
-      <div className="ann-note-icon"
-        title={ann.noteText || 'Click to edit'}
+      <div className="ann-note-icon" title={ann.noteText || 'Click to edit'}
         onClick={(e) => { e.stopPropagation(); setShowPopup((v) => !v) }}>📝</div>
       {showPopup && (
         <NotePopup annotation={ann}
-          onSave={(id, text) => onUpdate(id, { noteText: text })}
-          onDelete={onDelete}
-          onClose={() => setShowPopup(false)} />
+          onSave={(id, t) => onUpdate(id, { noteText: t })}
+          onDelete={onDelete} onClose={() => setShowPopup(false)} />
       )}
     </div>
   )
@@ -222,35 +293,28 @@ export default function AnnotationLayer({
 }) {
   const [pendingRects, setPendingRects] = useState([])
   const [toolbarPos,   setToolbarPos]   = useState(null)
-  const selRef     = useRef(null)
-  // Keep latest activeTool in a ref so event listeners always see the current value
-  const toolRef    = useRef(activeTool)
+  const selRef  = useRef(null)
+  const toolRef = useRef(activeTool)
   useEffect(() => { toolRef.current = activeTool }, [activeTool])
 
-  // ── Text-selection listener ──────────────────────────────────────────────
-  // Listen on DOCUMENT — because mouseup fires on textLayer spans which may
-  // not bubble reliably to pageEl. We then check if the selection is inside
-  // this specific page.
+  // ── Text selection via document mouseup ───────────────────────────────────
   useEffect(() => {
     if (!pageEl) return
 
-    const onMouseUp = () => {
+    const onUp = () => {
       const tool = toolRef.current
-      // Only text-selection tools
       if (!tool || tool === 'tick' || tool === 'note' || tool === 'pen' || tool === 'eraser') return
 
-      // Small delay so browser finalises the selection rect
       setTimeout(() => {
         const sel = window.getSelection()
         if (!sel || sel.isCollapsed || !sel.rangeCount) return
-        const range = sel.getRangeAt(0)
 
-        // Check selection belongs to THIS page
+        const range = sel.getRangeAt(0)
+        // Confirm this selection is inside THIS page element
         if (!pageEl.contains(range.commonAncestorContainer)) return
 
         const pr    = pageEl.getBoundingClientRect()
-        const rects = Array.from(range.getClientRects())
-          .filter((r) => r.width > 1 && r.height > 1)
+        const rects = Array.from(range.getClientRects()).filter((r) => r.width > 1 && r.height > 1)
         if (!rects.length) return
 
         const pctRects = rects.map((r) => ({
@@ -264,30 +328,28 @@ export default function AnnotationLayer({
         setPendingRects(pctRects)
 
         const last = rects[rects.length - 1]
-        setToolbarPos({
-          x: last.left + last.width / 2 - 150,
-          y: last.bottom + 12,
-        })
+        setToolbarPos({ x: last.left + last.width / 2 - 160, y: last.bottom + 14 })
       }, 30)
     }
 
-    // Attach to DOCUMENT so we catch bubbling from textLayer spans
-    document.addEventListener('mouseup', onMouseUp)
-    return () => document.removeEventListener('mouseup', onMouseUp)
-  }, [pageEl]) // pageEl change pe re-attach; toolRef always has current value
+    document.addEventListener('mouseup', onUp)
+    return () => document.removeEventListener('mouseup', onUp)
+  }, [pageEl])
 
-  // ── Apply annotation ─────────────────────────────────────────────────────
-  const handleApply = useCallback((color) => {
+  // ── Apply ─────────────────────────────────────────────────────────────────
+  const handleApply = useCallback((color, size) => {
     if (!selRef.current) return
     const { pctRects, text } = selRef.current
     pctRects.forEach(({ x, y, w, h }) => {
       onAdd({
-        type:   toolRef.current,
-        page,   color, text,
-        x:      `${x.toFixed(4)}%`,
-        y:      `${y.toFixed(4)}%`,
-        width:  `${w.toFixed(4)}%`,
-        height: `${h.toFixed(4)}%`,
+        type:    toolRef.current,
+        page,    color, text,
+        size:    size || 2,
+        opacity: toolRef.current === 'highlight' ? 0.38 : 0.9,
+        x:       `${x.toFixed(4)}%`,
+        y:       `${y.toFixed(4)}%`,
+        width:   `${w.toFixed(4)}%`,
+        height:  `${h.toFixed(4)}%`,
       })
     })
     window.getSelection()?.removeAllRanges()
@@ -298,61 +360,52 @@ export default function AnnotationLayer({
 
   const handleCancel = useCallback(() => {
     window.getSelection()?.removeAllRanges()
-    selRef.current = null
-    setPendingRects([])
-    setToolbarPos(null)
+    selRef.current = null; setPendingRects([]); setToolbarPos(null)
   }, [])
 
-  // ── Tick / note placement on click ───────────────────────────────────────
+  // ── Tick / note drop ──────────────────────────────────────────────────────
   const handleOverlayClick = useCallback((e) => {
     const tool = toolRef.current
     if (tool !== 'tick' && tool !== 'note') return
     if (!pageEl) return
     e.stopPropagation()
-    const pr  = pageEl.getBoundingClientRect()
-    const x   = ((e.clientX - pr.left) / pr.width)  * 100
-    const y   = ((e.clientY - pr.top)  / pr.height) * 100
+    const pr = pageEl.getBoundingClientRect()
+    const x  = ((e.clientX - pr.left) / pr.width)  * 100
+    const y  = ((e.clientY - pr.top)  / pr.height) * 100
     if (tool === 'tick') {
-      const tickType = activeColor || 'tick'
-      onAdd({ type: 'tick', page, x: `${x.toFixed(4)}%`, y: `${y.toFixed(4)}%`, tickType, color: tickType })
+      onAdd({ type: 'tick', page, x: `${x.toFixed(3)}%`, y: `${y.toFixed(3)}%`, tickType: 'tick', color: '#00c853' })
     } else {
-      onAdd({ type: 'note', page, x: `${x.toFixed(4)}%`, y: `${y.toFixed(4)}%`, color: activeColor || 'yellow', noteText: '' })
+      onAdd({ type: 'note', page, x: `${x.toFixed(3)}%`, y: `${y.toFixed(3)}%`, color: activeColor || 'yellow', noteText: '' })
     }
   }, [activeColor, onAdd, page, pageEl])
 
-  // ── Move callback for tick / note ────────────────────────────────────────
-  const handleMove = useCallback((id, xPct, yPct) => {
-    onUpdate(id, { x: xPct, y: yPct })
-  }, [onUpdate])
-
+  const handleMove = useCallback((id, xP, yP) => onUpdate(id, { x: xP, y: yP }), [onUpdate])
   const isDropTool = activeTool === 'tick' || activeTool === 'note'
 
   return (
     <>
-      <div
-        className="annotation-overlay"
-        // For text tools: keep pointer-events:none so the textLayer stays selectable
-        // For drop tools (tick/note): capture clicks
-        style={{ pointerEvents: isDropTool ? 'auto' : 'none' }}
-        onClick={isDropTool ? handleOverlayClick : undefined}
-      >
-        {/* Stored annotations */}
+      <div className="annotation-overlay"
+        style={{ pointerEvents: isDropTool ? 'auto' : 'none', zIndex: isDropTool ? 3 : 2 }}
+        onClick={isDropTool ? handleOverlayClick : undefined}>
+
         {annotations.map((ann) => {
-          if (ann.type === 'tick') return <AnnTick  key={ann.id} ann={ann} onDelete={onDelete} onMove={handleMove} />
-          if (ann.type === 'note') return <AnnNote  key={ann.id} ann={ann} onDelete={onDelete} onUpdate={onUpdate} onMove={handleMove} />
-          return                          <AnnRect  key={ann.id} ann={ann} onDelete={onDelete} />
+          if (ann.type === 'tick') return <AnnTick key={ann.id} ann={ann} onDelete={onDelete} onMove={handleMove} />
+          if (ann.type === 'note') return <AnnNote key={ann.id} ann={ann} onDelete={onDelete} onUpdate={onUpdate} onMove={handleMove} />
+          return <AnnRect key={ann.id} ann={ann} onDelete={onDelete} />
         })}
 
-        {/* Live preview while dragging a selection */}
+        {/* Live preview */}
         {pendingRects.map((r, i) => (
-          <div key={i}
-            className={`ann-rect ann-${activeTool} color-yellow`}
-            style={{ left: `${r.x}%`, top: `${r.y}%`, width: `${r.w}%`, height: `${r.h}%`, opacity: 0.3, pointerEvents: 'none' }}
-          />
+          <div key={i} style={{
+            position: 'absolute',
+            left: `${r.x}%`, top: `${r.y}%`, width: `${r.w}%`, height: `${r.h}%`,
+            background: activeTool === 'highlight' ? '#ffd600' : 'transparent',
+            borderBottom: activeTool === 'underline' ? '2px solid #ffd600' : 'none',
+            opacity: 0.35, pointerEvents: 'none',
+          }} />
         ))}
       </div>
 
-      {/* Floating colour picker (fixed position, above everything) */}
       {toolbarPos && (
         <AnnFloatingToolbar
           position={toolbarPos}
