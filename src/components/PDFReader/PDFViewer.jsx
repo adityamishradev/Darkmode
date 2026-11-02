@@ -6,59 +6,127 @@ import 'react-pdf/dist/Page/AnnotationLayer.css'
 import './night-mode.css'
 import './annotation.css'
 import AnnotationLayer from './AnnotationLayer'
+import DrawingLayer from './DrawingLayer'
 
-// Shared Document options — prevents re-parsing the PDF on every re-render
 const PDF_OPTIONS = { cMapUrl: 'https://unpkg.com/pdfjs-dist/cmaps/', cMapPacked: true }
+const DPR = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 3) : 1
 
-// Use device pixel ratio for sharp rendering on high-DPI screens (retina, etc.)
-const DEVICE_PIXEL_RATIO = typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 3) : 1
+// ─────────────────────────────────────────────────────────────────────────────
+// PDFPage — per-page wrapper that gives AnnotationLayer a stable DOM node
+// ─────────────────────────────────────────────────────────────────────────────
+function PDFPage({
+  page, scale, rotation, renderedPages,
+  activeTool, activeColor, penColor, penSize,
+  pageAnnotations, pageStrokes,
+  onPageRef, onAddAnnotation, onDeleteAnnotation, onUpdateAnnotation,
+  onAddStroke, onDeleteStroke,
+}) {
+  // pageNode holds the actual .pdf-page DOM element
+  const [pageNode, setPageNode] = useState(null)
 
+  const refCallback = (node) => {
+    setPageNode(node)        // triggers re-render so layers get fresh node
+    onPageRef(page, node)   // keep parent pageRefs in sync
+  }
+
+  const isRendered    = renderedPages.has(page)
+  const isDrawingTool = activeTool === 'pen' || activeTool === 'eraser'
+
+  return (
+    <div
+      className={[
+        'pdf-page',
+        isRendered ? '' : 'pdf-page-placeholder',
+        activeTool ? 'tool-active' : '',
+      ].filter(Boolean).join(' ')}
+      ref={refCallback}
+      style={{ position: 'relative' }}
+    >
+      {isRendered ? (
+        <Page
+          pageNumber={page}
+          scale={scale}
+          rotate={rotation}
+          devicePixelRatio={DPR}
+          renderTextLayer
+          renderAnnotationLayer
+          loading={<div className="page-loading"><LoaderCircle className="spin" size={18} /></div>}
+        />
+      ) : (
+        <div className="page-loading"><LoaderCircle className="spin" size={18} /></div>
+      )}
+
+      {/* AnnotationLayer — mounts as soon as the div node exists */}
+      {pageNode && (
+        <AnnotationLayer
+          page={page}
+          pageEl={pageNode}
+          annotations={pageAnnotations}
+          // Don't pass drawing-related tools to AnnotationLayer
+          activeTool={isRendered && !isDrawingTool ? activeTool : null}
+          activeColor={activeColor}
+          onAdd={onAddAnnotation}
+          onDelete={onDeleteAnnotation}
+          onUpdate={onUpdateAnnotation}
+        />
+      )}
+
+      {/* DrawingLayer — pen & eraser */}
+      {pageNode && (
+        <DrawingLayer
+          page={page}
+          pageEl={isRendered ? pageNode : null}
+          strokes={pageStrokes}
+          activeTool={isRendered && isDrawingTool ? activeTool : null}
+          penColor={penColor}
+          penSize={penSize}
+          onAddStroke={onAddStroke}
+          onDeleteStroke={onDeleteStroke}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main PDFViewer
+// ─────────────────────────────────────────────────────────────────────────────
 export default function PDFViewer({
   file, numPages, pageRefs, viewerRef, scale, rotation, readingMode,
   onLoad, onError, onScroll,
-  // annotation props
-  activeTool, activeColor, annotations, onAddAnnotation, onDeleteAnnotation, onUpdateAnnotation,
+  activeTool, activeColor, penColor, penSize,
+  annotations, onAddAnnotation, onDeleteAnnotation, onUpdateAnnotation,
+  onAddStroke, onDeleteStroke,
 }) {
   const [documentError, setDocumentError] = useState('')
   const [renderedPages, setRenderedPages] = useState(() => new Set([1, 2]))
-  // Per-page element refs for AnnotationLayer coordinate calculations
-  const pageElRefs = useRef({})
 
-  useEffect(() => setDocumentError(''), [file])
-  useEffect(() => setRenderedPages(new Set([1, 2])), [file])
+  useEffect(() => { setDocumentError(''); setRenderedPages(new Set([1, 2])) }, [file])
   useEffect(() => {
     window.__pdfReaderFile = file
     return () => { if (window.__pdfReaderFile === file) delete window.__pdfReaderFile }
   }, [file])
 
-  const handleError = (error) => {
-    const message = error?.message || 'The PDF could not be read.'
-    setDocumentError(message)
-    onError?.(error)
+  const handleError = (err) => {
+    setDocumentError(err?.message || 'The PDF could not be read.')
+    onError?.(err)
   }
 
   const handleScroll = () => {
     const viewer = viewerRef.current
-    if (viewer && numPages) {
-      const estimatedPageHeight = Math.max(560, viewer.clientWidth * 1.3)
-      const currentPage = Math.floor(viewer.scrollTop / estimatedPageHeight) + 1
-      setRenderedPages((current) => {
-        const next = new Set(current)
-        for (let page = Math.max(1, currentPage - 2); page <= Math.min(numPages, currentPage + 3); page += 1) next.add(page)
-        return next
-      })
-    }
+    if (!viewer || !numPages) return
+    const h = Math.max(560, viewer.clientWidth * 1.3)
+    const cur = Math.floor(viewer.scrollTop / h) + 1
+    setRenderedPages((prev) => {
+      const next = new Set(prev)
+      for (let p = Math.max(1, cur - 2); p <= Math.min(numPages, cur + 3); p++) next.add(p)
+      return next
+    })
     onScroll?.()
   }
 
-  // Whether a text-selection based tool is active (affects cursor + pointer events)
-  const isTextTool = activeTool && activeTool !== 'tick' && activeTool !== 'note'
   const isDropTool = activeTool === 'tick' || activeTool === 'note'
-  const viewerClass = [
-    'viewer',
-    `reading-${readingMode}`,
-    isDropTool ? 'tick-drop-mode' : '',
-  ].filter(Boolean).join(' ')
+  const viewerClass = ['viewer', `reading-${readingMode}`, isDropTool ? 'tick-drop-mode' : ''].filter(Boolean).join(' ')
 
   return (
     <section className={viewerClass} ref={viewerRef} onScroll={handleScroll}>
@@ -68,13 +136,13 @@ export default function PDFViewer({
             <AlertTriangle size={25} />
             <strong>Couldn't render this PDF</strong>
             <span>{documentError}</span>
-            <small>Try another PDF or check whether it is password protected.</small>
+            <small>Try another PDF or check if it is password-protected.</small>
           </div>
         ) : (
           <Document
             file={file}
             options={PDF_OPTIONS}
-            onLoadSuccess={(result) => { setDocumentError(''); onLoad(result) }}
+            onLoadSuccess={(r) => { setDocumentError(''); onLoad(r) }}
             onLoadError={handleError}
             loading={
               <div className="viewer-loading">
@@ -83,63 +151,31 @@ export default function PDFViewer({
               </div>
             }
           >
-            {Array.from({ length: numPages }, (_, index) => {
-              const page = index + 1
-              const pageAnnotations = annotations?.[page] || []
-
+            {Array.from({ length: numPages }, (_, i) => {
+              const page = i + 1
+              const all            = annotations?.[page] || []
+              const pageAnnotations = all.filter((a) => a.type !== 'drawing')
+              const pageStrokes     = all.filter((a) => a.type === 'drawing')
               return (
-                <div
-                  className={`pdf-page ${renderedPages.has(page) ? '' : 'pdf-page-placeholder'} ${activeTool ? 'tool-active' : ''}`}
+                <PDFPage
                   key={page}
-                  ref={(node) => {
-                    pageRefs.current[page] = node
-                    pageElRefs.current[page] = node
-                  }}
-                  style={{ position: 'relative' }}
-                >
-                  {renderedPages.has(page) ? (
-                    <>
-                      <Page
-                        pageNumber={page}
-                        scale={scale}
-                        rotate={rotation}
-                        devicePixelRatio={DEVICE_PIXEL_RATIO}
-                        renderTextLayer
-                        renderAnnotationLayer
-                        loading={<div className="page-loading"><LoaderCircle className="spin" size={18} /></div>}
-                      />
-                      <AnnotationLayer
-                        page={page}
-                        pageRef={{ current: pageElRefs.current[page] }}
-                        annotations={pageAnnotations}
-                        activeTool={activeTool}
-                        activeColor={activeColor}
-                        onAdd={onAddAnnotation}
-                        onDelete={onDeleteAnnotation}
-                        onUpdate={onUpdateAnnotation}
-                        scale={scale}
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <div className="page-loading"><LoaderCircle className="spin" size={18} /></div>
-                      {/* Still render stored annotations on unloaded pages */}
-                      {pageAnnotations.length > 0 && (
-                        <AnnotationLayer
-                          page={page}
-                          pageRef={{ current: pageElRefs.current[page] }}
-                          annotations={pageAnnotations}
-                          activeTool={null}
-                          activeColor={null}
-                          onAdd={onAddAnnotation}
-                          onDelete={onDeleteAnnotation}
-                          onUpdate={onUpdateAnnotation}
-                          scale={scale}
-                        />
-                      )}
-                    </>
-                  )}
-                </div>
+                  page={page}
+                  scale={scale}
+                  rotation={rotation}
+                  renderedPages={renderedPages}
+                  activeTool={activeTool}
+                  activeColor={activeColor}
+                  penColor={penColor}
+                  penSize={penSize}
+                  pageAnnotations={pageAnnotations}
+                  pageStrokes={pageStrokes}
+                  onPageRef={(pg, node) => { pageRefs.current[pg] = node }}
+                  onAddAnnotation={onAddAnnotation}
+                  onDeleteAnnotation={onDeleteAnnotation}
+                  onUpdateAnnotation={onUpdateAnnotation}
+                  onAddStroke={onAddStroke}
+                  onDeleteStroke={onDeleteStroke}
+                />
               )
             })}
           </Document>

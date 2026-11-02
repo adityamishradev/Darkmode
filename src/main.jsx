@@ -4,6 +4,7 @@ import { pdfjs } from 'react-pdf'
 import App from './App'
 import './index.css'
 import './upload-design.css'
+import './responsive.css'
 import { registerSW } from 'virtual:pwa-register'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
