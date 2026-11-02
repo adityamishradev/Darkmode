@@ -37,11 +37,19 @@ export function AnnFloatingToolbar({ position, tool, onApply, onCancel }) {
       : COLORS
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onCancel()
+    // Delay attachment by one frame so the triggering mouseup doesn't
+    // immediately dismiss the toolbar
+    let handler
+    const tid = requestAnimationFrame(() => {
+      handler = (e) => {
+        if (ref.current && !ref.current.contains(e.target)) onCancel()
+      }
+      document.addEventListener('mousedown', handler)
+    })
+    return () => {
+      cancelAnimationFrame(tid)
+      if (handler) document.removeEventListener('mousedown', handler)
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
   }, [onCancel])
 
   if (!position) return null
@@ -220,33 +228,36 @@ export default function AnnotationLayer({
   useEffect(() => { toolRef.current = activeTool }, [activeTool])
 
   // ── Text-selection listener ──────────────────────────────────────────────
-  // Attached directly to pageEl so it fires even if the overlay has
-  // pointer-events:none (which it does for text tools).
+  // Listen on DOCUMENT — because mouseup fires on textLayer spans which may
+  // not bubble reliably to pageEl. We then check if the selection is inside
+  // this specific page.
   useEffect(() => {
     if (!pageEl) return
 
     const onMouseUp = () => {
       const tool = toolRef.current
-      // Only handle text-selection tools
+      // Only text-selection tools
       if (!tool || tool === 'tick' || tool === 'note' || tool === 'pen' || tool === 'eraser') return
 
-      // Give the browser a tick to finalise the selection
+      // Small delay so browser finalises the selection rect
       setTimeout(() => {
         const sel = window.getSelection()
         if (!sel || sel.isCollapsed || !sel.rangeCount) return
         const range = sel.getRangeAt(0)
+
+        // Check selection belongs to THIS page
         if (!pageEl.contains(range.commonAncestorContainer)) return
 
         const pr    = pageEl.getBoundingClientRect()
         const rects = Array.from(range.getClientRects())
-          .filter((r) => r.width > 2 && r.height > 2)
+          .filter((r) => r.width > 1 && r.height > 1)
         if (!rects.length) return
 
         const pctRects = rects.map((r) => ({
-          x: ((r.left   - pr.left) / pr.width)  * 100,
-          y: ((r.top    - pr.top)  / pr.height) * 100,
-          w: (r.width              / pr.width)  * 100,
-          h: (r.height             / pr.height) * 100,
+          x: ((r.left  - pr.left) / pr.width)  * 100,
+          y: ((r.top   - pr.top)  / pr.height) * 100,
+          w: (r.width             / pr.width)  * 100,
+          h: (r.height            / pr.height) * 100,
         }))
 
         selRef.current = { pctRects, text: sel.toString().trim() }
@@ -254,16 +265,16 @@ export default function AnnotationLayer({
 
         const last = rects[rects.length - 1]
         setToolbarPos({
-          x: last.left + last.width / 2 - 140,
-          y: last.bottom + 10,
+          x: last.left + last.width / 2 - 150,
+          y: last.bottom + 12,
         })
-      }, 20)
+      }, 30)
     }
 
-    // Listen on the page element AND on window (so swipe/scroll doesn't miss it)
-    pageEl.addEventListener('mouseup', onMouseUp)
-    return () => pageEl.removeEventListener('mouseup', onMouseUp)
-  }, [pageEl]) // intentionally only pageEl — toolRef always has current value
+    // Attach to DOCUMENT so we catch bubbling from textLayer spans
+    document.addEventListener('mouseup', onMouseUp)
+    return () => document.removeEventListener('mouseup', onMouseUp)
+  }, [pageEl]) // pageEl change pe re-attach; toolRef always has current value
 
   // ── Apply annotation ─────────────────────────────────────────────────────
   const handleApply = useCallback((color) => {
