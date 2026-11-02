@@ -482,3 +482,19 @@
   z-index: 5 !important;
   pointer-events: auto !important;
 }
+
+/* ── Thin / Dark opacity row ─────────────────────────────────────────────── */
+.ann-tb-opacity-row {
+  align-items: center;
+  gap: 8px;
+}
+.ann-opacity-label {
+  font-size: 9px;
+  color: var(--muted, #94a4b5);
+  font-family: 'DM Mono', monospace;
+  white-space: nowrap;
+  min-width: 28px;
+}
+.ann-tb-opacity-row .ann-size-slider {
+  flex: 1;
+}

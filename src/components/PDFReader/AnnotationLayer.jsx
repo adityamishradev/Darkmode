@@ -25,22 +25,21 @@ const parsePct = (v) => (typeof v === 'string' ? parseFloat(v) : v)
 // AnnFloatingToolbar — colour picker + size slider + custom colour
 // ─────────────────────────────────────────────────────────────────────────────
 export function AnnFloatingToolbar({ position, tool, onApply, onCancel }) {
-  const [color, setColor]   = useState('#ffd600')
-  const [size,  setSize]    = useState(tool === 'highlight' ? 100 : tool === 'underline' ? 2 : 2)
+  const [color,   setColor]   = useState('#ffd600')
+  const [size,    setSize]    = useState(2)
+  const [opacity, setOpacity] = useState(40)   // % — for highlight thin/dark
   const ref = useRef(null)
 
-  const isTextTool  = tool === 'highlight' || tool === 'underline' || tool === 'strikethrough'
-  const isTickTool  = tool === 'tick'
-  const showSize    = tool === 'underline' || tool === 'strikethrough'
+  const isHighlight    = tool === 'highlight'
+  const isLineTool     = tool === 'underline' || tool === 'strikethrough'
+  const isTickTool     = tool === 'tick'
 
   const tickOptions = [
-    { hex: '#00c853', id: 'tick',     label: '✓' },
-    { hex: '#2979ff', id: 'checkbox', label: '☑' },
-    { hex: '#f44336', id: 'cross',    label: '✕' },
+    { hex: '#00c853', id: 'tick',     label: '✓ Tick'  },
+    { hex: '#2979ff', id: 'checkbox', label: '☑ Box'   },
+    { hex: '#f44336', id: 'cross',    label: '✕ Cross' },
   ]
 
-  // Dismiss on outside click — delayed by one animation frame so the
-  // mouseup that opened the toolbar doesn't immediately close it
   useEffect(() => {
     let handler
     const raf = requestAnimationFrame(() => {
@@ -56,7 +55,7 @@ export function AnnFloatingToolbar({ position, tool, onApply, onCancel }) {
 
   const style = {
     position: 'fixed',
-    top:  Math.min(position.y, window.innerHeight - 160),
+    top:  Math.min(position.y, window.innerHeight - 200),
     left: Math.max(8, Math.min(position.x, window.innerWidth - 340)),
     zIndex: 99999,
   }
@@ -65,20 +64,21 @@ export function AnnFloatingToolbar({ position, tool, onApply, onCancel }) {
     <div ref={ref} className="ann-toolbar ann-toolbar-v2" style={style}
       onMouseDown={(e) => e.stopPropagation()}>
 
+      {/* Header */}
       <div className="ann-tb-header">
         <span className="ann-toolbar-label">{TYPE_LABELS[tool] || tool}</span>
-        <button className="ann-cancel-btn" onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onCancel() }}>✕</button>
+        <button className="ann-cancel-btn"
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onCancel() }}>✕</button>
       </div>
 
       {isTickTool ? (
-        // Tick tool — 3 type options
         <div className="ann-tb-row">
           {tickOptions.map((t) => (
             <button key={t.id}
               className={`ann-tick-opt${color === t.hex ? ' selected' : ''}`}
               style={{ borderColor: t.hex, color: t.hex }}
               onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setColor(t.hex) }}>
-              {t.label} {t.id}
+              {t.label}
             </button>
           ))}
         </div>
@@ -97,43 +97,56 @@ export function AnnFloatingToolbar({ position, tool, onApply, onCancel }) {
             ))}
           </div>
 
-          {/* Custom colour picker */}
+          {/* Custom colour */}
           <div className="ann-tb-row">
             <label className="ann-custom-label">Custom:</label>
-            <input
-              type="color"
-              value={color}
-              className="ann-custom-color"
+            <input type="color" value={color} className="ann-custom-color"
               onChange={(e) => setColor(e.target.value)}
-              onMouseDown={(e) => e.stopPropagation()}
-              title="Pick custom colour"
-            />
+              onMouseDown={(e) => e.stopPropagation()} />
             <span className="ann-hex-val">{color}</span>
           </div>
 
-          {/* Size slider (underline / strikethrough only) */}
-          {showSize && (
-            <div className="ann-tb-row">
-              <label className="ann-custom-label">Size: {size}px</label>
-              <input
-                type="range" min="1" max="8" value={size}
+          {/* Highlight: Thin ↔ Dark opacity slider */}
+          {isHighlight && (
+            <div className="ann-tb-row ann-tb-opacity-row">
+              <span className="ann-opacity-label">Thin</span>
+              <input type="range" min="15" max="80" value={opacity}
                 className="ann-size-slider"
-                onChange={(e) => setSize(Number(e.target.value))}
-                onMouseDown={(e) => e.stopPropagation()}
-              />
+                onChange={(e) => setOpacity(Number(e.target.value))}
+                onMouseDown={(e) => e.stopPropagation()} />
+              <span className="ann-opacity-label">Dark</span>
+              <span className="ann-hex-val">{opacity}%</span>
             </div>
           )}
 
-          {/* Opacity/thickness preview */}
+          {/* Underline / Strikethrough: size slider */}
+          {isLineTool && (
+            <div className="ann-tb-row">
+              <label className="ann-custom-label">Size: {size}px</label>
+              <input type="range" min="1" max="8" value={size}
+                className="ann-size-slider"
+                onChange={(e) => setSize(Number(e.target.value))}
+                onMouseDown={(e) => e.stopPropagation()} />
+            </div>
+          )}
+
+          {/* Live preview */}
           <div className="ann-tb-preview">
-            {tool === 'highlight' && (
-              <div style={{ height: 18, background: color, opacity: 0.4, borderRadius: 3, flex: 1 }} />
+            {isHighlight && (
+              <div style={{
+                height: 20, background: color,
+                opacity: opacity / 100,
+                borderRadius: 3, flex: 1,
+                border: '1px solid rgba(255,255,255,.1)',
+              }} />
             )}
             {tool === 'underline' && (
-              <div style={{ height: size, background: color, borderRadius: 2, flex: 1, alignSelf: 'flex-end' }} />
+              <div style={{ height: 1, flex: 1, alignSelf: 'flex-end',
+                borderBottom: `${size}px solid ${color}` }} />
             )}
             {tool === 'strikethrough' && (
-              <div style={{ height: size, background: color, borderRadius: 2, flex: 1, alignSelf: 'center' }} />
+              <div style={{ height: size, background: color,
+                borderRadius: 1, flex: 1, alignSelf: 'center' }} />
             )}
           </div>
         </>
@@ -142,7 +155,7 @@ export function AnnFloatingToolbar({ position, tool, onApply, onCancel }) {
       <button className="ann-apply-btn ann-apply-full"
         onMouseDown={(e) => {
           e.preventDefault(); e.stopPropagation()
-          onApply(color, size)
+          onApply(color, size, opacity / 100)
         }}>
         Apply
       </button>
@@ -337,7 +350,7 @@ export default function AnnotationLayer({
   }, [pageEl])
 
   // ── Apply ─────────────────────────────────────────────────────────────────
-  const handleApply = useCallback((color, size) => {
+  const handleApply = useCallback((color, size, opacity) => {
     if (!selRef.current) return
     const { pctRects, text } = selRef.current
     pctRects.forEach(({ x, y, w, h }) => {
@@ -345,7 +358,7 @@ export default function AnnotationLayer({
         type:    toolRef.current,
         page,    color, text,
         size:    size || 2,
-        opacity: toolRef.current === 'highlight' ? 0.38 : 0.9,
+        opacity: toolRef.current === 'highlight' ? (opacity ?? 0.40) : 0.9,
         x:       `${x.toFixed(4)}%`,
         y:       `${y.toFixed(4)}%`,
         width:   `${w.toFixed(4)}%`,
